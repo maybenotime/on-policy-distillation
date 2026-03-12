@@ -1,0 +1,37 @@
+# On-Policy Distillation https://thinkingmachines.ai/blog/on-policy-distillation/
+mkdir -p $SLURM_TMPDIR/sya225/.cache/model
+export HUGGINGFACE_HUB_CACHE="$SLURM_TMPDIR/sya225/.cache/model"
+
+PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
+swift rlhf \
+    --rlhf_type gkd \
+    --use_hf true \
+    --model Qwen/Qwen2.5-0.5B-Instruct \
+    --teacher_model Qwen/Qwen2.5-7B-Instruct \
+    --train_type full \
+    --dataset open-thoughts/OpenThoughts-114k#10000 \
+    --seq_kd false \
+    --lmbda 1 \
+    --beta 1 \
+    --torch_dtype bfloat16 \
+    --num_train_epochs 1 \
+    --per_device_train_batch_size 2 \
+    --learning_rate 1e-5 \
+    --gradient_accumulation_steps 4 \
+    --save_steps 1000 \
+    --save_total_limit 2 \
+    --logging_steps 1 \
+    --max_length 16000 \
+    --max_completion_length 8192 \
+    --output_dir output \
+    --warmup_ratio 0.05 \
+    --save_only_model true \
+    --dataloader_num_workers 64 \
+    --dataset_num_proc 4 \
+    --deepspeed zero2 \
+    --attn_impl flash_attn \
+    --padding_free True \
+    --use_vllm true \
+    --vllm_mode server \
+    --vllm_server_host 127.0.0.1 \
+    --vllm_server_port 8000
