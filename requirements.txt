@@ -3,3 +3,5 @@ vllm==0.15.1
 ms-swift==4.0.0
 deepspeed==0.18.1
 flash_attn==2.8.3
+evalscope==1.4.2
+opencompass==0.5.2
