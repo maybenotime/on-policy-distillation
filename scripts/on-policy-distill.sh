@@ -1,4 +1,9 @@
 # On-Policy Distillation https://thinkingmachines.ai/blog/on-policy-distillation/
+STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
+TEACHER_MODEL="${2:-Qwen/Qwen2.5-7B-Instruct}"
+STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
+TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
+
 mkdir -p $SLURM_TMPDIR/sya225/.cache/model
 export HUGGINGFACE_HUB_CACHE="$SLURM_TMPDIR/sya225/.cache/model"
 
@@ -6,8 +11,8 @@ PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
     --rlhf_type gkd \
     --use_hf true \
-    --model Qwen/Qwen2.5-0.5B-Instruct \
-    --teacher_model Qwen/Qwen2.5-7B-Instruct \
+    --model "$STUDENT_MODEL" \
+    --teacher_model "$TEACHER_MODEL" \
     --train_type full \
     --dataset open-thoughts/OpenThoughts-114k#10000 \
     --seq_kd false \
@@ -23,7 +28,7 @@ swift rlhf \
     --logging_steps 1 \
     --max_length 16000 \
     --max_completion_length 8192 \
-    --output_dir output \
+    --output_dir "output/student_${STUDENT_MODEL_TAG}__teacher_${TEACHER_MODEL_TAG}" \
     --warmup_ratio 0.05 \
     --save_only_model true \
     --dataloader_num_workers 64 \

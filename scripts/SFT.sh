@@ -1,5 +1,9 @@
+STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
+STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
+
+
 swift sft \
-  --model "Qwen/Qwen2.5-0.5B-Instruct" \
+  --model "$STUDENT_MODEL" \
   --use-hf true \
   --tuner_type "full" \
   --dataset "open-thoughts/OpenThoughts-114k#10000" \
@@ -10,6 +14,7 @@ swift sft \
   --gradient_accumulation_steps "8" \
   --attn_impl flash_attn \
   --padding_free True \
+  --output_dir "output/student_${STUDENT_MODEL_TAG}_teacher_deepseek" \
   --save_strategy "epoch" \
   --save_total_limit "2" \
   --logging_steps "10" \
