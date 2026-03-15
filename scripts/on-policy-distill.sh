@@ -1,4 +1,6 @@
 # On-Policy Distillation https://thinkingmachines.ai/blog/on-policy-distillation/
+
+
 STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
 TEACHER_MODEL="${2:-Qwen/Qwen2.5-7B-Instruct}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
@@ -6,6 +8,13 @@ TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
 mkdir -p $SLURM_TMPDIR/sya225/.cache/model
 export HUGGINGFACE_HUB_CACHE="$SLURM_TMPDIR/sya225/.cache/model"
+
+HF_TOKEN="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"
+huggingface-cli login --token $HF_TOKEN
+
+export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
+export WANDB_PROJECT="on_policy_distill"
+
 
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
@@ -28,7 +37,8 @@ swift rlhf \
     --logging_steps 1 \
     --max_length 16000 \
     --max_completion_length 8192 \
-    --output_dir "output/student_${STUDENT_MODEL_TAG}__teacher_${TEACHER_MODEL_TAG}" \
+    --report_to wandb \
+    --output_dir "../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}" \
     --warmup_ratio 0.05 \
     --save_only_model true \
     --dataloader_num_workers 64 \
