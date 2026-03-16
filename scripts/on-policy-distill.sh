@@ -23,7 +23,7 @@ swift rlhf \
     --model "$STUDENT_MODEL" \
     --teacher_model "$TEACHER_MODEL" \
     --train_type full \
-    --dataset open-thoughts/OpenThoughts-114k#10000 \
+    --dataset open-thoughts/OpenThoughts-114k#20000 \
     --seq_kd false \
     --lmbda 1 \
     --beta 1 \
