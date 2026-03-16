@@ -1,2 +1,3 @@
 output/
 scripts/wandb/
+slurm_jobs/logs
