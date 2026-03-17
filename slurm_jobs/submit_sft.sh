@@ -25,4 +25,4 @@ echo "Start training"
 
 CUDA_VISIBLE_DEVICES=0,1,2,3 \
 NPROC_PER_NODE=4 \
-bash SFT.sh
+bash SFT.sh Qwen/Qwen2.5-0.5B-Instruct
