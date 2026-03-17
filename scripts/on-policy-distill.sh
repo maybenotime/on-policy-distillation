@@ -6,8 +6,11 @@ TEACHER_MODEL="${2:-Qwen/Qwen2.5-7B-Instruct}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
-mkdir -p $SLURM_TMPDIR/sya225/.cache/model
-export HUGGINGFACE_HUB_CACHE="$SLURM_TMPDIR/sya225/.cache/model"
+export HF_HOME=$SLURM_TMPDIR/.cache/huggingface
+export TORCH_HOME=$SLURM_TMPDIR/.cache/torch  
+export VLLM_CACHE_ROOT=$SLURM_TMPDIR/.cache/vllm
+export TMPDIR=$SLURM_TMPDIR/tmp
+mkdir -p $SLURM_TMPDIR/.cache/huggingface $SLURM_TMPDIR/.cache/torch $SLURM_TMPDIR/tmp $SLURM_TMPDIR/.cache/vllm
 
 HF_TOKEN="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"
 huggingface-cli login --token $HF_TOKEN

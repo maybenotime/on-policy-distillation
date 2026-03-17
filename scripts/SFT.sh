@@ -4,8 +4,11 @@ STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 HF_TOKEN="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"
 huggingface-cli login --token $HF_TOKEN
 
-export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
-export WANDB_PROJECT="SFT"
+export HF_HOME=$SLURM_TMPDIR/.cache/huggingface
+export TORCH_HOME=$SLURM_TMPDIR/.cache/torch  
+export VLLM_CACHE_ROOT=$SLURM_TMPDIR/.cache/vllm
+export TMPDIR=$SLURM_TMPDIR/tmp
+mkdir -p $SLURM_TMPDIR/.cache/huggingface $SLURM_TMPDIR/.cache/torch $SLURM_TMPDIR/tmp $SLURM_TMPDIR/.cache/vllm
 
 
 swift sft \
