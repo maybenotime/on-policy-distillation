@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH -J sft-student0.5b
+#SBATCH -J sft-student0.5b-80000
 #SBATCH --gres=gpu:h100:4
 #SBATCH --cpus-per-task=48
-#SBATCH --time=11:59:00
+#SBATCH --time=12:00:00
 #SBATCH --tasks-per-node=1
 #SBATCH --nodes=1
 #SBATCH --mem=0
 #SBATCH --exclusive
 #SBATCH --output=logs/%N-%j.out
-#SBATCH --account=def-angelx
+#SBATCH --account=rrg-msavva
 #SBATCH --mail-user=yangshipingnlp@gmail.com
 #SBATCH --mail-type=BEGIN,END,FAIL
 

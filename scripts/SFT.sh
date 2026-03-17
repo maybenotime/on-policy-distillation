@@ -12,13 +12,13 @@ swift sft \
   --model "$STUDENT_MODEL" \
   --use-hf true \
   --tuner_type "full" \
-  --dataset "open-thoughts/OpenThoughts-114k#10000" \
+  --dataset "open-thoughts/OpenThoughts-114k#80000" \
   --torch_dtype "bfloat16" \
   --num_train_epochs "1" \
   --per_device_train_batch_size "1" \
   --learning_rate "1e-5" \
   --gradient_accumulation_steps "8" \
-  --deepspeed zero3 \
+  --deepspeed zero2 \
   --attn_impl flash_attn \
   --padding_free True \
   --report_to wandb \
