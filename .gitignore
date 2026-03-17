@@ -1,3 +1,4 @@
 output/
 scripts/wandb/
 slurm_jobs/logs
+test.tar.gz
