@@ -12,6 +12,9 @@ export TMPDIR=$SLURM_TMPDIR/tmp
 
 mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
 
+export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
+export WANDB_PROJECT="sft"
+
 
 swift sft \
   --model "$STUDENT_MODEL" \
