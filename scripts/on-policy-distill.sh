@@ -7,10 +7,12 @@ STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
 export HF_HOME=$SLURM_TMPDIR/.cache/huggingface
+export MODELSCOPE_CACHE=$SLURM_TMPDIR/.cache/modelscope
 export TORCH_HOME=$SLURM_TMPDIR/.cache/torch  
 export VLLM_CACHE_ROOT=$SLURM_TMPDIR/.cache/vllm
 export TMPDIR=$SLURM_TMPDIR/tmp
-mkdir -p $SLURM_TMPDIR/.cache/huggingface $SLURM_TMPDIR/.cache/torch $SLURM_TMPDIR/tmp $SLURM_TMPDIR/.cache/vllm
+
+mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
 
 HF_TOKEN="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"
 huggingface-cli login --token $HF_TOKEN
