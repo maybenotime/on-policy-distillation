@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH -J on-policy-teacher7b-student0.5b-20000-rrg
+#SBATCH -J on-policy-teacher14b-student3b-5000-rrg
 #SBATCH --gres=gpu:h100:4
 #SBATCH --cpus-per-task=48
-#SBATCH --time=11:59:00
+#SBATCH --time=2:59:00
 #SBATCH --tasks-per-node=1
 #SBATCH --nodes=1
 #SBATCH --mem=0
@@ -33,8 +33,8 @@ echo "Start training"
 CUDA_VISIBLE_DEVICES=1,2,3 \
 NPROC_PER_NODE=3 \
 bash on-policy-distill.sh \
-	Qwen/Qwen2.5-0.5B-Instruct \
-	Qwen/Qwen2.5-7B-Instruct \
+	Qwen/Qwen2.5-3B-Instruct \
+	Qwen/Qwen2.5-14B-Instruct \
 	5000
 
 echo "Training finished"

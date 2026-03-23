@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J on-policy-teacher14b-student0.5b-20000-eval
+#SBATCH -J on-policy-teacher7b-student3b-5000-eval
 #SBATCH --gres=gpu:h100:1
 #SBATCH --cpus-per-task=12
 #SBATCH --time=02:59:00
@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --mem=288G
 #SBATCH --output=logs/%N-%j.out
-#SBATCH --account=def-angelx
+#SBATCH --account=rrg-msavva
 #SBATCH --mail-user=yangshipingnlp@gmail.com
 #SBATCH --mail-type=BEGIN,END,FAIL
 
