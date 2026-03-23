@@ -19,4 +19,6 @@ source test/bin/activate
 
 cd scripts
 
-bash eval_math_reasoning.sh /home/sya225/scratch/on-policy-distillation/output/student_Qwen2.5-0.5B-Instruct_teacher_Qwen2.5-14B-Instruct/v0-20260316-121605/checkpoint-834 
+CHECKPOINT=$(cat /home/sya225/scratch/on-policy-distillation/checkpoint_path.txt)
+echo "Evaluating checkpoint: $CHECKPOINT"
+bash eval_math_reasoning.sh "$CHECKPOINT"

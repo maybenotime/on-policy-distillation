@@ -34,7 +34,8 @@ CUDA_VISIBLE_DEVICES=1,2,3 \
 NPROC_PER_NODE=3 \
 bash on-policy-distill.sh \
 	Qwen/Qwen2.5-0.5B-Instruct \
-	Qwen/Qwen2.5-7B-Instruct
+	Qwen/Qwen2.5-7B-Instruct \
+	5000
 
 echo "Training finished"
 

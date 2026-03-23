@@ -3,6 +3,7 @@
 
 STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
 TEACHER_MODEL="${2:-Qwen/Qwen2.5-7B-Instruct}"
+DATA_SIZE="${3:-5000}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
@@ -28,7 +29,7 @@ swift rlhf \
     --model "$STUDENT_MODEL" \
     --teacher_model "$TEACHER_MODEL" \
     --train_type full \
-    --dataset "../data/prompts_math_swift.jsonl#5000" \
+    --dataset "../data/prompts_math_swift.jsonl#${DATA_SIZE}" \
     --seq_kd false \
     --lmbda 1 \
     --beta 1 \
@@ -43,7 +44,7 @@ swift rlhf \
     --max_length 16000 \
     --max_completion_length 8192 \
     --report_to wandb \
-    --output_dir "../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}" \
+    --output_dir "../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}" \
     --warmup_ratio 0.05 \
     --save_only_model true \
     --dataloader_num_workers 64 \
@@ -55,3 +56,9 @@ swift rlhf \
     --vllm_mode server \
     --vllm_server_host 127.0.0.1 \
     --vllm_server_port 8000
+
+# Find the latest checkpoint and save its path for the eval job
+OUTPUT_BASE="../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}"
+CHECKPOINT=$(find "$OUTPUT_BASE" -name "checkpoint-*" -type d | sort -V | tail -1)
+echo "$CHECKPOINT" > ../checkpoint_path.txt
+echo "Checkpoint saved: $CHECKPOINT"
