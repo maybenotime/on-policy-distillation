@@ -22,5 +22,5 @@ swift eval \
     --eval_dataset gsm8k aime24 aime25 amc math_500 \
     --eval_output_dir ../eval_output/${MODEL_TAG} \
     --vllm_gpu_memory_utilization 0.8 \
-    --eval_num_proc 16 \
-
+    --vllm_max_model_len 16384 \
+    --eval_num_proc 100 \
