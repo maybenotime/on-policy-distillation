@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /home/sya225/scratch/on-policy-distillation/scripts
+cd /home/sya225/scratch/on-policy-distillation/slurm_jobs
 
 JOB_ID=$(sbatch --parsable submit_on_policy_distillation.sh)
 echo "Training job: $JOB_ID"
