@@ -19,6 +19,6 @@ source test/bin/activate
 
 cd scripts
 
-CHECKPOINT=$(cat /home/sya225/scratch/on-policy-distillation/checkpoint_path.txt)
+CHECKPOINT=$(cat /home/sya225/scratch/on-policy-distillation/checkpoint_path_${TRAIN_JOB_ID}.txt)
 echo "Evaluating checkpoint: $CHECKPOINT"
 bash eval_math_reasoning.sh "$CHECKPOINT"

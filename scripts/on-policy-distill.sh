@@ -60,5 +60,5 @@ swift rlhf \
 # Find the latest checkpoint and save its path for the eval job
 OUTPUT_BASE="../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}"
 CHECKPOINT=$(find "$OUTPUT_BASE" -name "checkpoint-*" -type d | sort -V | tail -1)
-echo "$CHECKPOINT" > ../checkpoint_path.txt
+echo "$CHECKPOINT" > ../checkpoint_path_${SLURM_JOB_ID}.txt
 echo "Checkpoint saved: $CHECKPOINT"
