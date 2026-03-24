@@ -49,7 +49,8 @@ swift rlhf \
     --save_only_model true \
     --dataloader_num_workers 64 \
     --dataset_num_proc 4 \
-    --deepspeed zero2 \
+    --deepspeed zero3 \
+    --teacher-deepspeed zero3 \
     --attn_impl flash_attn \
     --padding_free True \
     --use_vllm true \

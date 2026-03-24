@@ -22,7 +22,7 @@ cd scripts
 
 CUDA_VISIBLE_DEVICES=0 \
 NPROC_PER_NODE=1 \
-bash rollout.sh &
+bash rollout.sh Qwen/Qwen2.5-3B-Instruct &
 
 ROLLOUT_PID=$!
 

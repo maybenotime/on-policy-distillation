@@ -25,6 +25,7 @@ import base64
 import html as html_lib
 import io
 import pickle
+import random
 from pathlib import Path
 
 import matplotlib
@@ -159,10 +160,17 @@ def render_sample(
     chart_b64 = fig_to_base64(fig)
 
     prompt_escaped = html_lib.escape(record["prompt"])
+    is_correct = record.get("is_correct")
+    if is_correct is True:
+        badge = '<span class="badge correct">✓ Correct</span>'
+    elif is_correct is False:
+        badge = '<span class="badge incorrect">✗ Incorrect</span>'
+    else:
+        badge = '<span class="badge unknown">? N/A</span>'
 
     return f"""
 <div class="sample" id="sample-{idx}">
-  <h3>Sample {idx}</h3>
+  <h3>Sample {idx} {badge}</h3>
   <details>
     <summary><b>Prompt</b></summary>
     <pre class="prompt">{prompt_escaped}</pre>
@@ -203,7 +211,11 @@ def main():
     parser.add_argument("--output", default="results/token_rewards_viz.html")
     parser.add_argument("--model",  default=None,
                         help="Student model name/path for tokenizer (defaults to metadata value)")
-    parser.add_argument("--max_samples", type=int, default=None)
+    parser.add_argument("--max_samples", type=int, default=None,
+                        help="Simple head-N cut (ignored when --sample_n is set)")
+    parser.add_argument("--sample_n", type=int, default=None,
+                        help="Randomly sample N correct + N incorrect records")
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     with open(args.input, "rb") as f:
@@ -211,7 +223,17 @@ def main():
 
     metadata = data["metadata"]
     records  = data["records"]
-    if args.max_samples:
+
+    if args.sample_n is not None:
+        rng = random.Random(args.seed)
+        correct_pool   = [r for r in records if r.get("is_correct") is True]
+        incorrect_pool = [r for r in records if r.get("is_correct") is False]
+        n = args.sample_n
+        sampled_correct   = rng.sample(correct_pool,   min(n, len(correct_pool)))
+        sampled_incorrect = rng.sample(incorrect_pool, min(n, len(incorrect_pool)))
+        records = sampled_correct + sampled_incorrect
+        print(f"Sampled {len(sampled_correct)} correct + {len(sampled_incorrect)} incorrect records")
+    elif args.max_samples:
         records = records[: args.max_samples]
 
     model_name    = args.model or metadata["student_model"]
@@ -228,13 +250,20 @@ def main():
     global_diff_max = float(all_diffs.max())
     print(f"Global reward-diff max: {global_diff_max:.3f}")
 
-    # Build HTML
-    sample_blocks = []
+    # Build HTML — split into correct / incorrect groups
+    correct_blocks   = []
+    incorrect_blocks = []
+    other_blocks     = []
     for i, rec in enumerate(records):
         print(f"  Rendering sample {i}/{len(records)-1} …")
-        sample_blocks.append(
-            render_sample(i, rec, tokenizer, teacher_names, global_diff_max)
-        )
+        block = render_sample(i, rec, tokenizer, teacher_names, global_diff_max)
+        is_correct = rec.get("is_correct")
+        if is_correct is True:
+            correct_blocks.append(block)
+        elif is_correct is False:
+            incorrect_blocks.append(block)
+        else:
+            other_blocks.append(block)
 
     teacher_legend_items = "".join(
         f'<span style="display:inline-block;width:14px;height:14px;'
@@ -263,6 +292,16 @@ def main():
   details summary {{ cursor:pointer; color:#555; font-size:13px; }}
   hr {{ border:none; border-top:1px solid #eee; }}
   .meta {{ font-size: 12px; color: #666; margin-bottom: 16px; }}
+  .badge {{ display:inline-block; padding:2px 8px; border-radius:10px;
+            font-size:12px; font-weight:600; margin-left:8px; vertical-align:middle; }}
+  .badge.correct   {{ background:#d4edda; color:#155724; }}
+  .badge.incorrect {{ background:#f8d7da; color:#721c24; }}
+  .badge.unknown   {{ background:#e2e3e5; color:#383d41; }}
+  .group-header {{ font-size:1.15em; font-weight:700; padding:10px 14px;
+                   border-radius:6px; margin: 28px 0 12px; }}
+  .correct-header   {{ background:#d4edda; color:#155724; }}
+  .incorrect-header {{ background:#f8d7da; color:#721c24; }}
+  .group-count {{ font-weight:400; font-size:0.9em; }}
 </style>
 </head>
 <body>
@@ -279,7 +318,10 @@ def main():
   (white = teachers agree &nbsp;→&nbsp; deep purple = large disagreement);
   hover each token for exact entropy, rewards, and diff values
 </div>
-{"".join(sample_blocks)}
+
+{"" if not correct_blocks else f'<div class="group-header correct-header">✓ Correct &nbsp;<span class="group-count">({len(correct_blocks)} samples)</span></div>' + "".join(correct_blocks)}
+{"" if not incorrect_blocks else f'<div class="group-header incorrect-header">✗ Incorrect &nbsp;<span class="group-count">({len(incorrect_blocks)} samples)</span></div>' + "".join(incorrect_blocks)}
+{"" if not other_blocks else f'<div class="group-header">? No label &nbsp;<span class="group-count">({len(other_blocks)} samples)</span></div>' + "".join(other_blocks)}
 </body>
 </html>
 """
