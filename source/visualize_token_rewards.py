@@ -3,10 +3,10 @@ Visualize per-token rewards and entropy from token_reward_analysis.py output.
 
 For each sample produces:
   - Completion text where each token's background color encodes the reward
-    difference across teachers: white = teachers agree, deep purple = large gap.
-    With 2 teachers: |reward_A - reward_B|.
-    With >2 teachers: max(rewards) - min(rewards) across all teachers.
+    variance across all teachers: white = teachers agree, deep purple = high variance.
     Hover tooltip shows: token text, entropy, and each teacher's reward.
+    Optional --contrast_teachers A B: tokens where teacher A and B have opposite
+    signs are highlighted with a red border.
   - A line chart showing reward (log p_teacher - log p_student) per teacher
     overlaid with a shaded entropy curve.
 
@@ -18,6 +18,7 @@ Usage:
         --output results/token_rewards_viz.html \
         --model  Qwen/Qwen2.5-0.5B-Instruct   # student tokenizer for decoding
         --max_samples 10                        # optional cap
+        --contrast_teachers Qwen/Qwen2.5-7B-Instruct Qwen/Qwen2.5-72B-Instruct
 """
 
 import argparse
@@ -58,11 +59,9 @@ def reward_diff_to_hex(diff_val: float, vmax: float) -> str:
 
 
 def compute_reward_diff(teacher_rewards: dict) -> np.ndarray:
-    """Per-token reward spread across teachers (always ≥ 0)."""
+    """Per-token reward variance across all teachers (always ≥ 0, higher = more disagreement)."""
     stacked = np.stack(list(teacher_rewards.values()), axis=0)  # (n_teachers, T)
-    if stacked.shape[0] == 2:
-        return np.abs(stacked[0] - stacked[1])
-    return stacked.max(axis=0) - stacked.min(axis=0)
+    return stacked.var(axis=0)
 
 
 def fig_to_base64(fig) -> str:
@@ -88,6 +87,7 @@ def render_sample(
     tokenizer,
     teacher_names: list[str],
     global_diff_max: float,
+    contrast_teachers: tuple[str, str] | None = None,
 ) -> str:
     completion_ids = record["completion_token_ids"]
     student_entropy = record["student_entropy"].float().numpy()
@@ -111,15 +111,21 @@ def render_sample(
         escaped = html_lib.escape(tok_str).replace(" ", "&nbsp;").replace("\n", "↵<br>")
         tooltip = (
             f"token #{t}: {html_lib.escape(repr(tok_str))}\\n"
-            f"reward diff: {diff:.4f}\\n"
+            f"reward variance: {diff:.4f}\\n"
             f"entropy: {ent:.4f}\\n"
         )
         for tname, rew in teacher_rewards.items():
             short = tname.split("/")[-1]
             tooltip += f"reward ({short}): {float(rew[t]):.4f}\\n"
-        # Red border when teachers disagree on sign (some positive, some negative)
-        rewards_at_t = [float(rew[t]) for rew in teacher_rewards.values()]
-        sign_conflict = any(r > 0 for r in rewards_at_t) and any(r < 0 for r in rewards_at_t)
+        # Red border: when contrast_teachers specified, only those two are checked;
+        # otherwise fall back to any sign conflict across all teachers.
+        if contrast_teachers is not None and all(ct in teacher_rewards for ct in contrast_teachers):
+            r_a = float(teacher_rewards[contrast_teachers[0]][t])
+            r_b = float(teacher_rewards[contrast_teachers[1]][t])
+            sign_conflict = (r_a > 0) != (r_b > 0)
+        else:
+            rewards_at_t = [float(rew[t]) for rew in teacher_rewards.values()]
+            sign_conflict = any(r > 0 for r in rewards_at_t) and any(r < 0 for r in rewards_at_t)
         border = "border:2px solid #e00;box-sizing:border-box;" if sign_conflict else "border:2px solid transparent;"
         span = (
             f'<span style="background:{bg};color:{fg};padding:1px 2px;'
@@ -176,10 +182,10 @@ def render_sample(
     <pre class="prompt">{prompt_escaped}</pre>
   </details>
   <div class="legend-bar">
-    <span style="font-size:12px;color:#555;">Teacher reward diff →&nbsp;</span>
+    <span style="font-size:12px;color:#555;">Teacher reward variance →&nbsp;</span>
     <canvas id="grad-{idx}" width="200" height="16"
       style="border-radius:3px;vertical-align:middle;"></canvas>
-    <span style="font-size:11px;color:#555;">&nbsp;small&nbsp;←&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→&nbsp;large</span>
+    <span style="font-size:11px;color:#555;">&nbsp;low&nbsp;←&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→&nbsp;high</span>
   </div>
   <script>
   (function(){{
@@ -216,6 +222,14 @@ def main():
     parser.add_argument("--sample_n", type=int, default=None,
                         help="Randomly sample N correct + N incorrect records")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--contrast_teachers",
+        nargs=2,
+        default=None,
+        metavar=("TEACHER_A", "TEACHER_B"),
+        help="Two teacher model names whose sign conflict triggers a red border on tokens. "
+             "When omitted, any sign conflict across all teachers triggers the red border.",
+    )
     args = parser.parse_args()
 
     with open(args.input, "rb") as f:
@@ -239,16 +253,27 @@ def main():
     model_name    = args.model or metadata["student_model"]
     teacher_names = metadata["teacher_models"]
 
+    contrast_teachers = None
+    if args.contrast_teachers is not None:
+        a, b = args.contrast_teachers
+        if a not in teacher_names or b not in teacher_names:
+            raise ValueError(
+                f"--contrast_teachers: both names must appear in the data.\n"
+                f"  Requested : {a!r}, {b!r}\n"
+                f"  Available : {teacher_names}"
+            )
+        contrast_teachers = (a, b)
+
     print(f"Loading tokenizer from {model_name} …")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    # Compute global reward-diff max for consistent coloring across samples
+    # Compute global reward-variance max for consistent coloring across samples
     all_diffs = np.concatenate([
         compute_reward_diff({k: v.float().numpy() for k, v in r["teacher_rewards"].items()})
         for r in records
     ])
     global_diff_max = float(all_diffs.max())
-    print(f"Global reward-diff max: {global_diff_max:.3f}")
+    print(f"Global reward-variance max: {global_diff_max:.4f}")
 
     # Build HTML — split into correct / incorrect groups
     correct_blocks   = []
@@ -256,7 +281,7 @@ def main():
     other_blocks     = []
     for i, rec in enumerate(records):
         print(f"  Rendering sample {i}/{len(records)-1} …")
-        block = render_sample(i, rec, tokenizer, teacher_names, global_diff_max)
+        block = render_sample(i, rec, tokenizer, teacher_names, global_diff_max, contrast_teachers)
         is_correct = rec.get("is_correct")
         if is_correct is True:
             correct_blocks.append(block)
@@ -314,9 +339,10 @@ def main():
   <br><br>
   <b>Teacher reward colors:</b>&nbsp; {teacher_legend_items}
   <br>
-  <b>Token background:</b> reward difference across teachers at each token
-  (white = teachers agree &nbsp;→&nbsp; deep purple = large disagreement);
-  hover each token for exact entropy, rewards, and diff values
+  <b>Token background:</b> reward variance across all teachers at each token
+  (white = low variance &nbsp;→&nbsp; deep purple = high variance);
+  <b>red border:</b> sign conflict{f" between {html_lib.escape(contrast_teachers[0].split('/')[-1])} and {html_lib.escape(contrast_teachers[1].split('/')[-1])}" if contrast_teachers else " across any two teachers"};
+  hover each token for exact entropy, rewards, and variance
 </div>
 
 {"" if not correct_blocks else f'<div class="group-header correct-header">✓ Correct &nbsp;<span class="group-count">({len(correct_blocks)} samples)</span></div>' + "".join(correct_blocks)}
