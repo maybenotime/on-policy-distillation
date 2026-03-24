@@ -19,6 +19,19 @@ source test/bin/activate
 
 cd scripts
 
-CHECKPOINT=$(cat /home/sya225/scratch/on-policy-distillation/checkpoint_path_${TRAIN_JOB_ID}.txt)
+CHECKPOINT_FILE="/home/sya225/scratch/on-policy-distillation/checkpoint_path_${TRAIN_JOB_ID}.txt"
+
+if [ ! -f "$CHECKPOINT_FILE" ] || [ ! -s "$CHECKPOINT_FILE" ]; then
+    echo "ERROR: checkpoint path file not found or empty: $CHECKPOINT_FILE" >&2
+    exit 1
+fi
+
+CHECKPOINT=$(cat "$CHECKPOINT_FILE")
+
+if [ ! -d "$CHECKPOINT" ]; then
+    echo "ERROR: checkpoint directory does not exist: $CHECKPOINT" >&2
+    exit 1
+fi
+
 echo "Evaluating checkpoint: $CHECKPOINT"
 bash eval_math_reasoning.sh "$CHECKPOINT"

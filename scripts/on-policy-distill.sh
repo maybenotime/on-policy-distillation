@@ -41,18 +41,19 @@ swift rlhf \
     --save_steps 1000 \
     --save_total_limit 2 \
     --logging_steps 1 \
-    --max_length 16000 \
+    --max_length 10000 \
     --max_completion_length 8192 \
     --report_to wandb \
     --output_dir "../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}" \
     --warmup_ratio 0.05 \
     --save_only_model true \
-    --dataloader_num_workers 64 \
+    --dataloader_num_workers 16 \
     --dataset_num_proc 4 \
     --deepspeed zero3 \
-    --teacher-deepspeed zero3 \
+    --teacher_deepspeed zero3 \
     --attn_impl flash_attn \
-    --padding_free True \
+    --padding_free False \
+    --use_logits_to_keep false \
     --use_vllm true \
     --vllm_mode server \
     --vllm_server_host 127.0.0.1 \
