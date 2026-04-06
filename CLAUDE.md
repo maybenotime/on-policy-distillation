@@ -14,7 +14,18 @@ Both use [ms-swift](https://github.com/modelscope/ms-swift) (`swift rlhf --rlhf_
 
 ## Environment Setup
 
-The repo runs on a SLURM cluster (account `rrg-msavva`). For local or interactive use:
+The repo runs on two SLURM clusters: **Fir** and **Solar**. Each has its own set of job scripts under `slurm_jobs/`, distinguished by file suffix (`_fir.sh` / `_solar.sh`).
+
+| | Fir | Solar |
+|---|---|---|
+| GPU | H100 | L40S |
+| Account | `rrg-msavva` | (none) |
+| Repo path | `/home/sya225/scratch/on-policy-distillation` | `/home/sya225/on-policy-distillation` |
+| Env setup | `module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv` | `source ~/.bashrc` |
+| Virtualenv | `source test/bin/activate` | `source test_env/bin/activate` |
+| `$SLURM_TMPDIR` | Set by SLURM | Falls back to `/localscratch/sya225` |
+
+For local or interactive use:
 
 ```bash
 module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv
@@ -88,14 +99,16 @@ bash scripts/visualize.sh
 
 ### SLURM Job Submission
 
+All SLURM scripts have two variants: `*_fir.sh` (H100, Fir cluster) and `*_solar.sh` (L40S, Solar cluster). Replace `<cluster>` below with `fir` or `solar`.
+
 ```bash
 # Submit training + auto-chain eval
-bash slurm_jobs/submit_train_plus_eval.sh
+bash slurm_jobs/submit_train_plus_eval_<cluster>.sh
 
 # Individual jobs
-sbatch slurm_jobs/submit_on_policy_distillation.sh
-sbatch slurm_jobs/submit_sft.sh
-sbatch slurm_jobs/submit_token_reward_analysis.sh
+sbatch slurm_jobs/submit_on_policy_distillation_<cluster>.sh
+sbatch slurm_jobs/submit_sft_<cluster>.sh
+sbatch slurm_jobs/submit_token_reward_analysis_<cluster>.sh
 ```
 
 ## Architecture

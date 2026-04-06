@@ -4,9 +4,11 @@ set -euo pipefail
 MODEL="${1:-${MODEL:-Qwen/Qwen2.5-0.5B-Instruct}}"
 MODEL_TAG="${MODEL##*/}"
 
+SLURM_TMPDIR="${SLURM_TMPDIR:-/localscratch/sya225}"
+
 # export HF_HOME=$SLURM_TMPDIR/.cache/huggingface
 # export MODELSCOPE_CACHE=$SLURM_TMPDIR/.cache/modelscope
-# export TORCH_HOME=$SLURM_TMPDIR/.cache/torch  
+# export TORCH_HOME=$SLURM_TMPDIR/.cache/torch
 # export VLLM_CACHE_ROOT=$SLURM_TMPDIR/.cache/vllm
 # export TMPDIR=$SLURM_TMPDIR/tmp
 

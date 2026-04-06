@@ -7,6 +7,8 @@ DATA_SIZE="${3:-5000}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
+SLURM_TMPDIR="${SLURM_TMPDIR:-/localscratch/sya225}"
+
 export HF_HOME=$SLURM_TMPDIR/.cache/huggingface
 export MODELSCOPE_CACHE=$SLURM_TMPDIR/.cache/modelscope
 export TORCH_HOME=$SLURM_TMPDIR/.cache/torch  

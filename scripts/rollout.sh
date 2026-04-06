@@ -1,5 +1,7 @@
 STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
 
+SLURM_TMPDIR="${SLURM_TMPDIR:-/localscratch/sya225}"
+
 export HF_HOME=$SLURM_TMPDIR/.cache/huggingface
 export MODELSCOPE_CACHE=$SLURM_TMPDIR/.cache/modelscope
 export TORCH_HOME=$SLURM_TMPDIR/.cache/torch  
