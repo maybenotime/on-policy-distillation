@@ -2,7 +2,7 @@
 
 
 STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
-TEACHER_MODEL="${2:-Qwen/Qwen2.5-7B-Instruct}"
+TEACHER_MODEL="${2:-Qwen/Qwen2.5-3B-Instruct}"
 DATA_SIZE="${3:-5000}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
@@ -49,8 +49,7 @@ swift rlhf \
     --save_only_model true \
     --dataloader_num_workers 16 \
     --dataset_num_proc 4 \
-    --deepspeed zero3 \
-    --teacher_deepspeed zero3 \
+    --deepspeed zero2 \
     --attn_impl flash_attn \
     --padding_free False \
     --use_logits_to_keep false \

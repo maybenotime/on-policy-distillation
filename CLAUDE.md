@@ -128,6 +128,16 @@ sbatch slurm_jobs/submit_token_reward_analysis.sh
 
 The on-policy GKD setup runs two processes concurrently on one node:
 - **GPU 0**: `swift rollout` — vLLM server serving the student model for on-policy generation (port 8000)
-- **GPUs 1–3**: `swift rlhf --rlhf_type gkd` — training with DeepSpeed ZeRO-3, teacher accessed via vLLM server (`--vllm_mode server`)
+- **GPUs 1–3**: `swift rlhf --rlhf_type gkd` — training with DeepSpeed ZeRO-2 (student), no DeepSpeed for teacher
 
 The OPSD setup uses a single process with `--vllm_mode colocate` and `--sleep_level 1` to share GPU memory between student training and vLLM inference.
+
+### Known Issues & Fixes (GKD)
+
+**Student must use `--deepspeed zero2`, NOT `zero3`.**
+With ZeRO-3, student parameters are sharded across GPUs. Every `update_flattened_params` weight-sync (training → vLLM rollout server) requires a NCCL `GatheredParameters` collective that can corrupt the training-side parameter buffers, causing student weights to silently become NaN. With ZeRO-2, parameters are fully replicated so the sync is safe.
+
+Teacher can be run without DeepSpeed (or with `zero3`) since it only does inference (`torch.no_grad()`) and never needs weight syncing.
+
+**`logging_nan_inf_filter=True` masks NaN loss as `0.0`.**
+If student weights go NaN, every subsequent step reports `loss=0.0` and `grad_norm=1.41421356` (√2, from weight decay only). This looks like training is running but nothing is being learned. Always check that loss varies across steps and grad_norm is not a fixed constant.
