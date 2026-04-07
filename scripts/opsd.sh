@@ -20,7 +20,7 @@ cd ..
 export OPSD_MODE="${OPSD_MODE:-single}"
 export OPSD_TEACHER_MODEL="${OPSD_TEACHER_MODEL:-deepseek-r1}"
 export OPSD_TEACHER_MODELS="${OPSD_TEACHER_MODELS:-}"
-DATA_SIZE="${DATA_SIZE:-500}"
+DATA_SIZE="${DATA_SIZE:-840}"
 export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
 export WANDB_PROJECT="on_policy_self_distill"
 
