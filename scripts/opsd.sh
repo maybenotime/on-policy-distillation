@@ -46,6 +46,7 @@ NPROC_PER_NODE=1 \
 swift rlhf \
     --rlhf_type gkd \
     --model "$MODEL" \
+    --teacher_model "$MODEL" \
     --use_hf true \
     --external_plugins source/opsd_plugin.py \
     --dataset local-opsd-math \

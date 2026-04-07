@@ -27,6 +27,10 @@ export HF_DATASETS_CACHE=/home/sya225/.cache/huggingface/datasets
 
 mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
 
+# Pick a free port to avoid conflicts when multiple jobs run on the same node
+export MASTER_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); p=s.getsockname()[1]; s.close(); print(p)")
+echo "MASTER_PORT=$MASTER_PORT"
+
 cd scripts
 
 bash opsd.sh
