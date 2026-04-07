@@ -1,8 +1,5 @@
 #!/bin/bash
-# On-Policy Self-Distillation (OPSD) — test run with Qwen2.5-0.5B-Instruct
-#
-# OPSD: student sees only the problem; teacher (same model weights) sees
-#       problem + a correct reference solution as privileged information.
+# On-Policy Self-Distillation (OPSD) — Qwen2.5-0.5B-Instruct student
 #
 # Mode selection (set before calling this script):
 #   OPSD_MODE=single (default)  — use one teacher model's correct answer
@@ -10,35 +7,46 @@
 #
 #   OPSD_MODE=all_correct       — concatenate all correct teachers' answers
 #
+#   OPSD_MODE=multi             — concatenate correct answers from a subset
+#   OPSD_TEACHER_MODELS=deepseek-r1,Qwen2.5-7B-Instruct,Llama-3.1-8B-Instruct
+#
 # Usage:
-#   bash opsd.sh                                      # defaults
+#   bash opsd.sh
 #   OPSD_MODE=single OPSD_TEACHER_MODEL=Qwen2.5-72B-Instruct bash opsd.sh
-#   OPSD_MODE=all_correct bash opsd.sh
+#   OPSD_MODE=multi OPSD_TEACHER_MODELS=deepseek-r1,Qwen2.5-7B-Instruct bash opsd.sh
 
 cd ..
 
 export OPSD_MODE="${OPSD_MODE:-single}"
 export OPSD_TEACHER_MODEL="${OPSD_TEACHER_MODEL:-deepseek-r1}"
+export OPSD_TEACHER_MODELS="${OPSD_TEACHER_MODELS:-}"
 export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
 export WANDB_PROJECT="on_policy_self_distill"
 
 MODEL="Qwen/Qwen2.5-0.5B-Instruct"
 MODEL_TAG="${MODEL##*/}"
-export OPSD_DATA_PATH="${OPSD_DATA_PATH:-/localhome/sya225/Projects/Self-Distillation/data/final_math_dataset_updated.jsonl}"
-OUTPUT="output/opsd_${MODEL_TAG}_mode${OPSD_MODE}_teacher${OPSD_TEACHER_MODEL}"
+export OPSD_DATA_PATH="${OPSD_DATA_PATH:-../data/math_all_teachers_correct.jsonl}"
 
-echo "OPSD_MODE        = $OPSD_MODE"
+# Build a short teacher tag for the output dir
+if [ "$OPSD_MODE" = "multi" ]; then
+    TEACHER_TAG="multi_$(echo "$OPSD_TEACHER_MODELS" | tr ',' '_' | tr -d ' ')"
+else
+    TEACHER_TAG="${OPSD_TEACHER_MODEL}"
+fi
+OUTPUT="output/opsd_${MODEL_TAG}_mode${OPSD_MODE}_teacher${TEACHER_TAG}"
+
+echo "OPSD_MODE          = $OPSD_MODE"
 echo "OPSD_TEACHER_MODEL = $OPSD_TEACHER_MODEL"
-echo "Output dir       = $OUTPUT"
+echo "OPSD_TEACHER_MODELS= $OPSD_TEACHER_MODELS"
+echo "OPSD_DATA_PATH     = $OPSD_DATA_PATH"
+echo "Output dir         = $OUTPUT"
 
-# when test, we delete the deepspeed config and use static mode (have teacher_model)
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 NPROC_PER_NODE=1 \
 swift rlhf \
     --rlhf_type gkd \
     --model "$MODEL" \
     --use_hf true \
-    --teacher_model "$MODEL" \
     --external_plugins source/opsd_plugin.py \
     --dataset local-opsd-math \
     --tuner_type lora \

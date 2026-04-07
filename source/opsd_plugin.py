@@ -1,9 +1,9 @@
-"""OPSD dataset plugin for final_math_dataset_updated.jsonl.
+"""OPSD dataset plugin for math_all_teachers_correct.jsonl.
 
 On-Policy Self-Distillation: student sees only the problem; teacher sees
 problem + a correct reference solution as privileged information.
 
-Two selection modes, controlled by the OPSD_MODE environment variable:
+Three selection modes, controlled by the OPSD_MODE environment variable:
 
   single (default)
       Use the answer from ONE specific teacher model.
@@ -14,14 +14,21 @@ Two selection modes, controlled by the OPSD_MODE environment variable:
       Concatenate every correct teacher model's answer into one privileged
       context.  Records where NO model answered correctly are skipped.
 
+  multi
+      Concatenate correct answers from a user-specified subset of models.
+      Set the subset with OPSD_TEACHER_MODELS (comma-separated, e.g.
+      "deepseek-r1,Qwen2.5-7B-Instruct,Llama-3.1-8B-Instruct").
+      Records where none of the specified models answered correctly are skipped.
+
 Usage:
     OPSD_MODE=single OPSD_TEACHER_MODEL=Qwen2.5-72B-Instruct \\
-        swift rlhf --rlhf_type gkd --external_plugins source/opsd_plugin.py \\
-        --dataset /path/to/final_math_dataset_updated.jsonl ...
+        swift rlhf --rlhf_type gkd --external_plugins source/opsd_plugin.py ...
 
     OPSD_MODE=all_correct \\
-        swift rlhf --rlhf_type gkd --external_plugins source/opsd_plugin.py \\
-        --dataset /path/to/final_math_dataset_updated.jsonl ...
+        swift rlhf --rlhf_type gkd --external_plugins source/opsd_plugin.py ...
+
+    OPSD_MODE=multi OPSD_TEACHER_MODELS=deepseek-r1,Qwen2.5-7B-Instruct,Llama-3.1-8B-Instruct \\
+        swift rlhf --rlhf_type gkd --external_plugins source/opsd_plugin.py ...
 """
 
 import os
@@ -62,10 +69,18 @@ ALL_TEACHER_MODELS: List[str] = [
 
 _MODE = os.environ.get('OPSD_MODE', 'single').strip().lower()
 _TEACHER_MODEL = os.environ.get('OPSD_TEACHER_MODEL', 'deepseek-r1').strip()
+_TEACHER_MODELS: List[str] = [
+    m.strip() for m in os.environ.get('OPSD_TEACHER_MODELS', '').split(',') if m.strip()
+]
 
-assert _MODE in ('single', 'all_correct'), (
-    f"OPSD_MODE must be 'single' or 'all_correct', got '{_MODE}'"
+assert _MODE in ('single', 'all_correct', 'multi'), (
+    f"OPSD_MODE must be 'single', 'all_correct', or 'multi', got '{_MODE}'"
 )
+if _MODE == 'multi':
+    assert _TEACHER_MODELS, (
+        "OPSD_MODE=multi requires OPSD_TEACHER_MODELS to be set "
+        "(comma-separated list of model keys, e.g. 'deepseek-r1,Qwen2.5-7B-Instruct')"
+    )
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -144,12 +159,43 @@ class AllCorrectTeachersPreprocessor(RowPreprocessor):
         }
 
 
+class MultiTeacherPreprocessor(RowPreprocessor):
+    """Concatenate correct answers from a user-specified subset of teacher models.
+
+    Interface:
+        OPSD_TEACHER_MODELS  — comma-separated model keys (required)
+
+    Records where none of the specified models answered correctly are skipped.
+    """
+
+    def preprocess(self, row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        problem = row.get('messages', [{}])[0].get('content', row.get('problem', ''))
+
+        correct_answers: List[str] = []
+        for model_key in _TEACHER_MODELS:
+            model_data = row.get(model_key)
+            if model_data and model_data.get('correctness_math_verify', False):
+                correct_answers.append(model_data['generation'])
+
+        if not correct_answers:
+            return None
+
+        solution_block = '\n\n'.join(correct_answers)
+
+        return {
+            'messages': _student_messages(problem),
+            'teacher_prompt': _build_teacher_prompt(problem, solution_block),
+        }
+
+
 # ── Dataset registration ───────────────────────────────────────────────────────
 
-_preprocessor = (
-    SingleTeacherPreprocessor() if _MODE == 'single'
-    else AllCorrectTeachersPreprocessor()
-)
+if _MODE == 'single':
+    _preprocessor = SingleTeacherPreprocessor()
+elif _MODE == 'multi':
+    _preprocessor = MultiTeacherPreprocessor()
+else:
+    _preprocessor = AllCorrectTeachersPreprocessor()
 
 _DATA_PATH = os.environ.get(
     'OPSD_DATA_PATH',
