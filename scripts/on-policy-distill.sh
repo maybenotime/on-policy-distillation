@@ -1,19 +1,17 @@
 # On-Policy Distillation https://thinkingmachines.ai/blog/on-policy-distillation/
 
-
 STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
 TEACHER_MODEL="${2:-Qwen/Qwen2.5-3B-Instruct}"
 DATA_SIZE="${3:-5000}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
-SLURM_TMPDIR="${SLURM_TMPDIR:-/localscratch/sya225}"
-
-export HF_HOME=$SLURM_TMPDIR/.cache/huggingface
-export MODELSCOPE_CACHE=$SLURM_TMPDIR/.cache/modelscope
-export TORCH_HOME=$SLURM_TMPDIR/.cache/torch  
-export VLLM_CACHE_ROOT=$SLURM_TMPDIR/.cache/vllm
-export TMPDIR=$SLURM_TMPDIR/tmp
+export HF_HOME=/home/sya225/.cache/huggingface
+export MODELSCOPE_CACHE=/home/sya225/.cache/modelscope
+export TORCH_HOME=/home/sya225/.cache/torch
+export VLLM_CACHE_ROOT=/home/sya225/.cache/vllm
+export TMPDIR=/home/sya225/.cache/tmp
+export HF_DATASETS_CACHE=/home/sya225/.cache/huggingface/datasets
 
 mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
 
@@ -22,7 +20,6 @@ huggingface-cli login --token $HF_TOKEN
 
 export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
 export WANDB_PROJECT="on_policy_distill"
-
 
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
@@ -37,14 +34,14 @@ swift rlhf \
     --beta 1 \
     --torch_dtype bfloat16 \
     --num_train_epochs 1 \
-    --per_device_train_batch_size 2 \
+    --per_device_train_batch_size 1 \
     --learning_rate 1e-5 \
     --gradient_accumulation_steps 4 \
     --save_steps 1000 \
     --save_total_limit 2 \
     --logging_steps 1 \
-    --max_length 10000 \
-    --max_completion_length 8192 \
+    --max_length 8192 \
+    --max_completion_length 4096 \
     --report_to wandb \
     --output_dir "../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}" \
     --warmup_ratio 0.05 \
@@ -52,6 +49,7 @@ swift rlhf \
     --dataloader_num_workers 16 \
     --dataset_num_proc 4 \
     --deepspeed zero2 \
+    --gradient_checkpointing true \
     --attn_impl flash_attn \
     --padding_free False \
     --use_logits_to_keep false \
@@ -60,7 +58,6 @@ swift rlhf \
     --vllm_server_host 127.0.0.1 \
     --vllm_server_port 8000
 
-# Find the latest checkpoint and save its path for the eval job
 OUTPUT_BASE="../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}"
 CHECKPOINT=$(find "$OUTPUT_BASE" -name "checkpoint-*" -type d | sort -V | tail -1)
 echo "$CHECKPOINT" > ../checkpoint_path_${SLURM_JOB_ID}.txt

@@ -1,12 +1,11 @@
 STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
 
-SLURM_TMPDIR="${SLURM_TMPDIR:-/localscratch/sya225}"
-
-export HF_HOME=$SLURM_TMPDIR/.cache/huggingface
-export MODELSCOPE_CACHE=$SLURM_TMPDIR/.cache/modelscope
-export TORCH_HOME=$SLURM_TMPDIR/.cache/torch  
-export VLLM_CACHE_ROOT=$SLURM_TMPDIR/.cache/vllm
-export TMPDIR=$SLURM_TMPDIR/tmp
+export HF_HOME=/home/sya225/.cache/huggingface
+export MODELSCOPE_CACHE=/home/sya225/.cache/modelscope
+export TORCH_HOME=/home/sya225/.cache/torch
+export VLLM_CACHE_ROOT=/home/sya225/.cache/vllm
+export TMPDIR=/home/sya225/.cache/tmp
+export HF_DATASETS_CACHE=/home/sya225/.cache/huggingface/datasets
 
 mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
 
