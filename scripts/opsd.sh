@@ -20,6 +20,7 @@ cd ..
 export OPSD_MODE="${OPSD_MODE:-single}"
 export OPSD_TEACHER_MODEL="${OPSD_TEACHER_MODEL:-deepseek-r1}"
 export OPSD_TEACHER_MODELS="${OPSD_TEACHER_MODELS:-}"
+DATA_SIZE="${DATA_SIZE:-500}"
 export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
 export WANDB_PROJECT="on_policy_self_distill"
 
@@ -49,7 +50,7 @@ swift rlhf \
     --teacher_model "$MODEL" \
     --use_hf true \
     --external_plugins source/opsd_plugin.py \
-    --dataset local-opsd-math \
+    --dataset "local-opsd-math#${DATA_SIZE}" \
     --tuner_type lora \
     --lora_rank 64 \
     --lora_alpha 128 \
