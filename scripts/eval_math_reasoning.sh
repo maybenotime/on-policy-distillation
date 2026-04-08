@@ -18,10 +18,23 @@ export HF_DATASETS_CACHE=/home/sya225/.cache/huggingface/datasets
 
 mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
 
+# Detect LoRA adapter checkpoints (have adapter_config.json but no config.json model_type)
+if [ -f "${MODEL}/adapter_config.json" ] && ! python3 -c "
+import json, sys
+cfg = json.load(open('${MODEL}/config.json')) if __import__('os').path.exists('${MODEL}/config.json') else {}
+sys.exit(0 if 'model_type' in cfg else 1)
+" 2>/dev/null; then
+    BASE_MODEL=$(python3 -c "import json; d=json.load(open('${MODEL}/adapter_config.json')); print(d['base_model_name_or_path'])")
+    echo "LoRA checkpoint detected. Base model: $BASE_MODEL"
+    EVAL_ARGS="--model ${BASE_MODEL} --adapters ${MODEL}"
+else
+    EVAL_ARGS="--model ${MODEL}"
+fi
+
 CUDA_VISIBLE_DEVICES=0 \
 swift eval \
     --use_hf true \
-    --model "${MODEL}" \
+    $EVAL_ARGS \
     --eval_backend Native \
     --infer_backend vllm \
     --eval_dataset gsm8k aime24 aime25 amc math_500 \
