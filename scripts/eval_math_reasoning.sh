@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Always run from repo root so external_plugins paths (e.g. source/opsd_plugin.py)
+# stored in checkpoint args.json resolve correctly.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
 MODEL="${1:-${MODEL:-Qwen/Qwen2.5-0.5B-Instruct}}"
 MODEL_TAG="${MODEL##*/}"
 
@@ -20,7 +25,7 @@ swift eval \
     --eval_backend Native \
     --infer_backend vllm \
     --eval_dataset gsm8k aime24 aime25 amc math_500 \
-    --eval_output_dir ../eval_output/${MODEL_TAG} \
+    --eval_output_dir eval_output/${MODEL_TAG} \
     --vllm_gpu_memory_utilization 0.8 \
     --vllm_max_model_len 16384 \
     --eval_num_proc 100
