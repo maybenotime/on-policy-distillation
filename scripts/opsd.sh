@@ -51,10 +51,7 @@ swift rlhf \
     --use_hf true \
     --external_plugins source/opsd_plugin.py \
     --dataset "local-opsd-math#${DATA_SIZE}" \
-    --tuner_type lora \
-    --lora_rank 64 \
-    --lora_alpha 128 \
-    --target_modules all-linear \
+    --tuner_type full \
     --use_vllm true \
     --vllm_mode colocate \
     --vllm_gpu_memory_utilization 0.4 \
