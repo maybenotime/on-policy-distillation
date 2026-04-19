@@ -414,8 +414,8 @@ def main():
     parser.add_argument("--num_rollouts", type=int, default=10)
     parser.add_argument("--num_sample_positions", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--use_vllm", action="store_true", default=False)
-    parser.add_argument("--no_vllm", action="store_true", default=False)
+    parser.add_argument("--use_vllm", action="store_true", default=True)
+    parser.add_argument("--no_vllm", dest="use_vllm", action="store_false")
     parser.add_argument("--vllm_gpu_memory_utilization", type=float, default=0.9)
     parser.add_argument("--dtype", default="bfloat16", choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--device", default="cuda")
@@ -445,7 +445,7 @@ def main():
         "float32": torch.float32,
     }
 
-    use_vllm = args.use_vllm and not args.no_vllm
+    use_vllm = args.use_vllm
 
     run_analysis(
         student_model_name=args.student_model,
