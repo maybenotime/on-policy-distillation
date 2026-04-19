@@ -1,6 +1,8 @@
 #!/bin/bash
 #SBATCH -J ood-analysis
 #SBATCH --gres=gpu:l40s:1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
 #SBATCH --nodelist=cs-venus-15
 #SBATCH --time=11:59:00
 #SBATCH --output=logs/%N-%j.out
