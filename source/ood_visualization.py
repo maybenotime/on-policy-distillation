@@ -268,7 +268,7 @@ def plot_case_studies(examples, output_dir, tag, fmt, dpi):
     for label, rollouts in examples.items():
         for i, record in enumerate(rollouts):
             T = len(record["completion_token_ids"])
-            prompt_short = record["prompt"][:80].replace("\n", " ")
+            prompt_short = record["prompt"][:80].replace("\n", " ").replace("$", r"\$")
             suptitle = f"[{label.upper()}] len={T}  prompt: {prompt_short}..."
 
             fig, axes = plt.subplots(2, 2, figsize=(14, 10))

@@ -95,6 +95,7 @@ def run_teacher_completions_vllm(
     temperature: float,
     gpu_memory_utilization: float,
     dtype: str,
+    tensor_parallel_size: int = 1,
 ) -> list[list[float]]:
     """
     Use vLLM to generate teacher completions at each prefix and evaluate accuracy.
@@ -136,6 +137,7 @@ def run_teacher_completions_vllm(
         gpu_memory_utilization=gpu_memory_utilization,
         max_model_len=estimated_max_len,
         trust_remote_code=True,
+        tensor_parallel_size=tensor_parallel_size,
     )
 
     if temperature == 0:
@@ -250,6 +252,7 @@ def run_analysis(
     batch_size: int = 4,
     use_vllm: bool = True,
     vllm_gpu_memory_utilization: float = 0.9,
+    num_gpus: int = 1,
     dtype=torch.bfloat16,
     device: str = "cuda",
 ):
@@ -294,9 +297,10 @@ def run_analysis(
     torch.cuda.empty_cache()
 
     # ---- Phase 2: Teacher forward pass (PPL + Entropy) ----
-    print(f"\n[Phase 2] Loading teacher model (HF): {teacher_model_name}")
+    teacher_device = "auto" if num_gpus > 1 else device
+    print(f"\n[Phase 2] Loading teacher model (HF): {teacher_model_name} (device_map={teacher_device})")
     teacher_model, teacher_tokenizer = load_model_and_tokenizer(
-        teacher_model_name, dtype=dtype, device=device
+        teacher_model_name, dtype=dtype, device=teacher_device
     )
 
     teacher_formatted_prompts = apply_chat_template_if_needed(prompts, teacher_tokenizer)
@@ -351,6 +355,7 @@ def run_analysis(
             temperature=temperature,
             gpu_memory_utilization=vllm_gpu_memory_utilization,
             dtype=dtype_str,
+            tensor_parallel_size=num_gpus,
         )
     else:
         print(f"[Phase 3] Running teacher completions with HuggingFace (slow) ...")
@@ -417,6 +422,7 @@ def main():
     parser.add_argument("--use_vllm", action="store_true", default=True)
     parser.add_argument("--no_vllm", dest="use_vllm", action="store_false")
     parser.add_argument("--vllm_gpu_memory_utilization", type=float, default=0.9)
+    parser.add_argument("--num_gpus", type=int, default=1)
     parser.add_argument("--dtype", default="bfloat16", choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
@@ -461,6 +467,7 @@ def main():
         batch_size=args.batch_size,
         use_vllm=use_vllm,
         vllm_gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        num_gpus=args.num_gpus,
         dtype=dtype_map[args.dtype],
         device=args.device,
     )
