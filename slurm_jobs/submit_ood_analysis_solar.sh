@@ -18,12 +18,13 @@ PROMPTS_FILE=${4:-"data/prompts_math_with_answers_correct_100.jsonl"}
 
 STUDENT_TAG=$(basename "$STUDENT_MODEL")
 TEACHER_TAG=$(basename "$TEACHER_MODEL")
+DATASET_TAG=$(basename "$PROMPTS_FILE" .jsonl | sed 's/^ood_//')
 
 python source/ood_analysis.py \
     --student_model "$STUDENT_MODEL" \
     --teacher_model "$TEACHER_MODEL" \
     --prompts_file "$PROMPTS_FILE" \
-    --output_path "results/ood_analysis_${STUDENT_TAG}_${TEACHER_TAG}.pkl" \
+    --output_path "results/ood_${DATASET_TAG}_${STUDENT_TAG}_${TEACHER_TAG}.pkl" \
     --num_rollouts "$NUM_ROLLOUTS" \
     --num_sample_positions 10 \
     --batch_size 2 \
