@@ -308,6 +308,17 @@ def run_analysis(
     # Build formatted prompt text for prefix construction (with chat template applied)
     formatted_prompts_text = formatted_prompts
 
+    # Compute student log-probs and entropy (reuse model before unloading)
+    print("[Phase 1b] Computing student log-probs and entropy ...")
+    student_logps_list, student_entropy_list = get_per_token_logps_and_entropy(
+        student_model,
+        student_tokenizer,
+        prompt_ids_list,
+        completion_ids_list,
+        temperature=1.0,
+        batch_size=batch_size,
+    )
+
     del student_model
     torch.cuda.empty_cache()
 
@@ -396,8 +407,11 @@ def run_analysis(
             "prompt_token_ids": prompt_ids_list[i],
             "completion_token_ids": completion_ids_list[i],
             "is_correct": is_correct_list[i],
+            "student_logps": student_logps_list[i],
+            "student_entropy": student_entropy_list[i],
             "teacher_logps": teacher_logps_list[i],
             "teacher_entropy": teacher_entropy_list[i],
+            "token_rewards": teacher_logps_list[i] - student_logps_list[i],
             "cumulative_ppl": cumulative_ppl_list[i],
             "sliding_window_ppl": sliding_ppl_list[i],
             "sample_positions": all_positions[i],
