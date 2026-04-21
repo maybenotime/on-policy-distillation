@@ -20,12 +20,30 @@ import pickle
 from pathlib import Path
 
 import numpy as np
+import torch
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
 NUM_BINS = 100
+DEFAULT_PPL_WINDOW_SIZE = 50
+
+
+def compute_sliding_window_ppl(logps, window_size: int = DEFAULT_PPL_WINDOW_SIZE) -> np.ndarray:
+    """Compute sliding window PPL from per-token log probs. Works with torch tensors or numpy arrays."""
+    if isinstance(logps, torch.Tensor):
+        logps = logps.float().numpy()
+    logps = np.asarray(logps, dtype=np.float64)
+    T = len(logps)
+    result = np.full(T, np.nan)
+    cumsum = np.cumsum(logps)
+    for i in range(T):
+        start = max(0, i - window_size + 1)
+        window_len = i - start + 1
+        window_sum = cumsum[i] - (cumsum[start - 1] if start > 0 else 0.0)
+        result[i] = np.exp(-window_sum / window_len)
+    return result
 
 
 def load_results(input_path: str) -> dict:
@@ -81,6 +99,14 @@ def split_by_correctness(records):
     return correct, incorrect
 
 
+SKIP_PREFIX_FRAC = 0.05
+
+
+def trim_prefix(values_list: list[np.ndarray], skip_frac: float = SKIP_PREFIX_FRAC) -> list[np.ndarray]:
+    """Drop the first skip_frac of each sequence to avoid unstable early-token values."""
+    return [v[int(len(v) * skip_frac):] for v in values_list]
+
+
 def plot_metric_by_correctness(
     ax, correct_records, incorrect_records, metric_key, ylabel, title,
     num_bins=NUM_BINS, use_binning=True,
@@ -94,6 +120,9 @@ def plot_metric_by_correctness(
             continue
         values_list = [np.array(r[metric_key].float()) if hasattr(r[metric_key], 'float') else np.array(r[metric_key])
                        for r in group]
+
+        if metric_key in ("cumulative_ppl", "sliding_window_ppl"):
+            values_list = trim_prefix(values_list)
 
         if use_binning:
             x, mean, ci_lo, ci_hi = bin_by_relative_position(values_list, num_bins)
@@ -137,47 +166,52 @@ def plot_accuracy_by_correctness(ax, correct_records, incorrect_records):
     ax.set_ylim(-0.05, 1.05)
 
 
-def plot_combined(ax, records):
-    """Three metrics on one plot with dual y-axes."""
-    # PPL (left axis)
-    ppl_values = [np.array(r["cumulative_ppl"].float()) if hasattr(r["cumulative_ppl"], 'float')
-                  else np.array(r["cumulative_ppl"]) for r in records]
-    x_ppl, mean_ppl, _, _ = bin_by_relative_position(ppl_values)
-    mask_ppl = ~np.isnan(mean_ppl)
-    line_ppl, = ax.plot(x_ppl[mask_ppl], mean_ppl[mask_ppl], color="#3498db",
-                         linewidth=1.5, label="Cumulative PPL")
-    ax.set_xlabel("Relative Sequence Position (%)")
-    ax.set_ylabel("Cumulative PPL", color="#3498db")
-    ax.tick_params(axis="y", labelcolor="#3498db")
+def plot_combined(axes, correct_records, incorrect_records):
+    """Three metrics on two subplots (correct / incorrect) with dual y-axes."""
+    for ax, group, group_label in [
+        (axes[0], correct_records, "Correct"),
+        (axes[1], incorrect_records, "Incorrect"),
+    ]:
+        if not group:
+            continue
 
-    # Entropy (left axis, secondary scale via twin)
-    ax2 = ax.twinx()
-    entropy_values = [np.array(r["teacher_entropy"].float()) if hasattr(r["teacher_entropy"], 'float')
-                      else np.array(r["teacher_entropy"]) for r in records]
-    x_ent, mean_ent, _, _ = bin_by_relative_position(entropy_values)
-    mask_ent = ~np.isnan(mean_ent)
-    line_ent, = ax2.plot(x_ent[mask_ent], mean_ent[mask_ent], color="#e67e22",
-                          linewidth=1.5, linestyle="--", label="Teacher Entropy")
-    ax2.set_ylabel("Teacher Entropy (nats)", color="#e67e22")
-    ax2.tick_params(axis="y", labelcolor="#e67e22")
+        ppl_values = [np.array(r["sliding_window_ppl"]) if isinstance(r["sliding_window_ppl"], np.ndarray)
+                      else np.array(r["sliding_window_ppl"].float()) if hasattr(r["sliding_window_ppl"], 'float')
+                      else np.array(r["sliding_window_ppl"]) for r in group]
+        x_ppl, mean_ppl, _, _ = bin_by_relative_position(ppl_values)
+        mask_ppl = ~np.isnan(mean_ppl)
+        line_ppl, = ax.plot(x_ppl[mask_ppl], mean_ppl[mask_ppl], color="#3498db",
+                             linewidth=1.5, label="Sliding Window PPL")
+        ax.set_xlabel("Relative Sequence Position (%)")
+        ax.set_ylabel("Sliding Window PPL", color="#3498db")
+        ax.tick_params(axis="y", labelcolor="#3498db")
 
-    # Accuracy (right axis, offset)
-    ax3 = ax.twinx()
-    ax3.spines["right"].set_position(("axes", 1.15))
-    fractions = np.array(records[0]["sample_fractions"]) * 100
-    acc_matrix = np.array([r["completion_accuracy"] for r in records])
-    mean_acc = np.mean(acc_matrix, axis=0)
-    line_acc, = ax3.plot(fractions, mean_acc, color="#2ecc71", linewidth=1.5,
-                          linestyle="-.", marker="o", markersize=3, label="Completion Accuracy")
-    ax3.set_ylabel("Completion Accuracy", color="#2ecc71")
-    ax3.tick_params(axis="y", labelcolor="#2ecc71")
-    ax3.set_ylim(-0.05, 1.05)
+        ax2 = ax.twinx()
+        entropy_values = [np.array(r["teacher_entropy"].float()) if hasattr(r["teacher_entropy"], 'float')
+                          else np.array(r["teacher_entropy"]) for r in group]
+        x_ent, mean_ent, _, _ = bin_by_relative_position(entropy_values)
+        mask_ent = ~np.isnan(mean_ent)
+        line_ent, = ax2.plot(x_ent[mask_ent], mean_ent[mask_ent], color="#e67e22",
+                              linewidth=1.5, linestyle="--", label="Teacher Entropy")
+        ax2.set_ylabel("Teacher Entropy (nats)", color="#e67e22")
+        ax2.tick_params(axis="y", labelcolor="#e67e22")
 
-    lines = [line_ppl, line_ent, line_acc]
-    labels = [l.get_label() for l in lines]
-    ax.legend(lines, labels, loc="upper left")
-    ax.set_title("Combined Metrics vs Sequence Position")
-    ax.grid(True, alpha=0.3)
+        ax3 = ax.twinx()
+        ax3.spines["right"].set_position(("axes", 1.15))
+        fractions = np.array(group[0]["sample_fractions"]) * 100
+        acc_matrix = np.array([r["completion_accuracy"] for r in group])
+        mean_acc = np.mean(acc_matrix, axis=0)
+        line_acc, = ax3.plot(fractions, mean_acc, color="#2ecc71", linewidth=1.5,
+                              linestyle="-.", marker="o", markersize=3, label="Completion Accuracy")
+        ax3.set_ylabel("Completion Accuracy", color="#2ecc71")
+        ax3.tick_params(axis="y", labelcolor="#2ecc71")
+        ax3.set_ylim(-0.05, 1.05)
+
+        lines = [line_ppl, line_ent, line_acc]
+        labels = [l.get_label() for l in lines]
+        ax.legend(lines, labels, loc="upper left")
+        ax.set_title(f"{group_label} (n={len(group)})")
+        ax.grid(True, alpha=0.3)
 
 
 def select_example_rollouts(correct, incorrect, num_examples=2):
@@ -299,6 +333,8 @@ def main():
     parser.add_argument("--output_dir", default="results/")
     parser.add_argument("--format", default="pdf", choices=["pdf", "png"])
     parser.add_argument("--dpi", type=int, default=150)
+    parser.add_argument("--ppl_window_size", type=int, default=DEFAULT_PPL_WINDOW_SIZE,
+                        help="Window size for sliding window PPL computation")
     args = parser.parse_args()
 
     data = load_results(args.input_path)
@@ -306,6 +342,10 @@ def main():
     metadata = data["metadata"]
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    for r in records:
+        if "sliding_window_ppl" not in r and "teacher_logps" in r:
+            r["sliding_window_ppl"] = compute_sliding_window_ppl(r["teacher_logps"], args.ppl_window_size)
 
     correct, incorrect = split_by_correctness(records)
     print(f"Loaded {len(records)} records: {len(correct)} correct, {len(incorrect)} incorrect")
@@ -319,6 +359,15 @@ def main():
     fig1.tight_layout()
     fig1.savefig(output_dir / f"ood_ppl_{tag}.{args.format}", dpi=args.dpi)
     print(f"Saved figure 1: ood_ppl_{tag}.{args.format}")
+
+    # Figure 1b: Sliding Window PPL
+    fig1b, ax1b = plt.subplots(figsize=(10, 6))
+    plot_metric_by_correctness(ax1b, correct, incorrect, "sliding_window_ppl",
+                               f"Sliding Window PPL (w={args.ppl_window_size})",
+                               f"Teacher Sliding Window PPL (window={args.ppl_window_size}) on Student Trajectories")
+    fig1b.tight_layout()
+    fig1b.savefig(output_dir / f"ood_sliding_ppl_{tag}.{args.format}", dpi=args.dpi)
+    print(f"Saved figure: ood_sliding_ppl_{tag}.{args.format}")
 
     # Figure 2: Teacher Completion Accuracy
     fig2, ax2 = plt.subplots(figsize=(10, 6))
@@ -335,10 +384,11 @@ def main():
     fig3.savefig(output_dir / f"ood_entropy_{tag}.{args.format}", dpi=args.dpi)
     print(f"Saved figure 3: ood_entropy_{tag}.{args.format}")
 
-    # Figure 4: Combined three-metric plot
-    fig4, ax4 = plt.subplots(figsize=(12, 6))
-    plot_combined(ax4, records)
-    fig4.tight_layout()
+    # Figure 4: Combined three-metric plot (correct vs incorrect)
+    fig4, axes4 = plt.subplots(1, 2, figsize=(22, 6))
+    fig4.suptitle("Combined Metrics vs Sequence Position", fontsize=14)
+    plot_combined(axes4, correct, incorrect)
+    fig4.tight_layout(rect=[0, 0, 1, 0.95])
     fig4.savefig(output_dir / f"ood_combined_{tag}.{args.format}", dpi=args.dpi, bbox_inches="tight")
     print(f"Saved figure 4: ood_combined_{tag}.{args.format}")
 
