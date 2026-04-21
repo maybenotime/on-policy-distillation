@@ -29,4 +29,5 @@ python source/ood_analysis.py \
     --num_rollouts "$NUM_ROLLOUTS" \
     --num_sample_positions 10 \
     --batch_size 2 \
-    --use_vllm
+    --use_vllm \
+    --vllm_gpu_memory_utilization 0.8
