@@ -9,6 +9,7 @@
 
 source ~/.bashrc
 cd /home/sya225/on-policy-distillation
+git pull
 source test_env/bin/activate
 
 STUDENT_MODEL=${1:-"Qwen/Qwen2.5-3B-Instruct"}
