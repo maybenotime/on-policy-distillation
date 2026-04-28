@@ -6,9 +6,43 @@
 #SBATCH --output=logs/%N-%j.out
 
 source ~/.bashrc
-cd /home/sya225/on-policy-distillation
+
+REPO_DIR=/home/sya225/on-policy-distillation
+REPO_URL=git@github.com:maybenotime/on-policy-distillation.git
+
+if [ ! -d "$REPO_DIR" ]; then
+    echo "Cloning repo..."
+    git clone "$REPO_URL" "$REPO_DIR"
+fi
+
+cd "$REPO_DIR"
 git pull
-source test_env/bin/activate
+
+if [ ! -d "test_env" ]; then
+    echo "Creating virtualenv..."
+    uv venv test_env
+    source test_env/bin/activate
+    echo "Installing dependencies..."
+    uv pip install -r requirements.txt
+else
+    source test_env/bin/activate
+fi
+
+mkdir -p logs
+
+export HF_HOME=/home/sya225/.cache/huggingface
+export MODELSCOPE_CACHE=/home/sya225/.cache/modelscope
+export TORCH_HOME=/home/sya225/.cache/torch
+export VLLM_CACHE_ROOT=/home/sya225/.cache/vllm
+export TMPDIR=/home/sya225/.cache/tmp
+export HF_DATASETS_CACHE=/home/sya225/.cache/huggingface/datasets
+mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
+
+HF_TOKEN="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"
+huggingface-cli login --token $HF_TOKEN
+
+export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
+export WANDB_PROJECT="on_policy_distill"
 
 STUDENT_MODEL=${1:-"Qwen/Qwen2.5-0.5B-Instruct"}
 TEACHER_MODEL=${2:-"Qwen/Qwen2.5-3B-Instruct"}
@@ -38,21 +72,6 @@ CUDA_VISIBLE_DEVICES=0 NPROC_PER_NODE=1 bash rollout.sh "$STUDENT_MODEL" &
 ROLLOUT_PID=$!
 sleep 30
 echo "Start training: dataset=$DATASET, size=$DATA_SIZE"
-
-export HF_HOME=/home/sya225/.cache/huggingface
-export MODELSCOPE_CACHE=/home/sya225/.cache/modelscope
-export TORCH_HOME=/home/sya225/.cache/torch
-export VLLM_CACHE_ROOT=/home/sya225/.cache/vllm
-export TMPDIR=/home/sya225/.cache/tmp
-export HF_DATASETS_CACHE=/home/sya225/.cache/huggingface/datasets
-
-mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
-
-HF_TOKEN="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"
-huggingface-cli login --token $HF_TOKEN
-
-export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
-export WANDB_PROJECT="on_policy_distill"
 
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 CUDA_VISIBLE_DEVICES=1,2,3 NPROC_PER_NODE=3 \
