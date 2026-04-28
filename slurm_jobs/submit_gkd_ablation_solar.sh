@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH -J gkd-ablation
-#SBATCH --gres=gpu:l40s:4
-#SBATCH --exclusive
+#SBATCH --gres=gpu:l40s:2
 #SBATCH --time=11:59:00
 #SBATCH --output=logs/%N-%j.out
 
@@ -48,6 +47,15 @@ STUDENT_MODEL=${1:-"Qwen/Qwen2.5-0.5B-Instruct"}
 TEACHER_MODEL=${2:-"Qwen/Qwen2.5-3B-Instruct"}
 DATASET=${3:-"data/gsm8k_ST_correct_3000.jsonl"}
 DATA_SIZE=${4:-3000}
+TRAIN_GPUS=${5:-3}
+
+if [ "$TRAIN_GPUS" -eq 1 ]; then
+    TRAIN_CUDA="1"
+elif [ "$TRAIN_GPUS" -eq 2 ]; then
+    TRAIN_CUDA="1,2"
+else
+    TRAIN_CUDA="1,2,3"
+fi
 
 STUDENT_TAG=$(basename "$STUDENT_MODEL")
 TEACHER_TAG=$(basename "$TEACHER_MODEL")
@@ -74,7 +82,7 @@ sleep 30
 echo "Start training: dataset=$DATASET, size=$DATA_SIZE"
 
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
-CUDA_VISIBLE_DEVICES=1,2,3 NPROC_PER_NODE=3 \
+CUDA_VISIBLE_DEVICES=$TRAIN_CUDA NPROC_PER_NODE=$TRAIN_GPUS \
 swift rlhf \
     --rlhf_type gkd \
     --use_hf true \
