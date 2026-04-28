@@ -42,10 +42,11 @@ def compute_cumulative_ppl(logps: torch.Tensor) -> torch.Tensor:
     return torch.exp(-cumsum / positions)
 
 
-def compute_sliding_window_ppl(logps: torch.Tensor, window_size: int = 50) -> torch.Tensor:
-    """Given per-token log probs (T,), return sliding window PPL at each position."""
+def compute_sliding_window_ppl(logps: torch.Tensor, window_frac: float = 0.10) -> torch.Tensor:
+    """Given per-token log probs (T,), return sliding window PPL using a fractional window size."""
     logps_f32 = logps.float()
     T = len(logps_f32)
+    window_size = max(1, int(T * window_frac))
     result = torch.full((T,), float('nan'))
     cumsum = torch.cumsum(logps_f32, dim=0)
     for i in range(T):
@@ -264,7 +265,7 @@ def run_analysis(
     num_rollouts: int = 10,
     num_sample_positions: int = 10,
     batch_size: int = 4,
-    ppl_window_size: int = 50,
+    ppl_window_frac: float = 0.10,
     use_vllm: bool = True,
     vllm_gpu_memory_utilization: float = 0.9,
     num_gpus: int = 1,
@@ -352,7 +353,7 @@ def run_analysis(
     )
 
     cumulative_ppl_list = [compute_cumulative_ppl(logps) for logps in teacher_logps_list]
-    sliding_ppl_list = [compute_sliding_window_ppl(logps, window_size=ppl_window_size) for logps in teacher_logps_list]
+    sliding_ppl_list = [compute_sliding_window_ppl(logps, window_frac=ppl_window_frac) for logps in teacher_logps_list]
 
     del teacher_model
     torch.cuda.empty_cache()
@@ -427,7 +428,7 @@ def run_analysis(
         "max_new_tokens": max_new_tokens,
         "num_rollouts": num_rollouts,
         "num_sample_positions": num_sample_positions,
-        "ppl_window_size": ppl_window_size,
+        "ppl_window_frac": ppl_window_frac,
         "num_samples": len(prompts),
     }
 
@@ -455,7 +456,8 @@ def main():
     parser.add_argument("--no_vllm", dest="use_vllm", action="store_false")
     parser.add_argument("--vllm_gpu_memory_utilization", type=float, default=0.9)
     parser.add_argument("--num_gpus", type=int, default=1)
-    parser.add_argument("--ppl_window_size", type=int, default=50)
+    parser.add_argument("--ppl_window_frac", type=float, default=0.10,
+                        help="Window size as fraction of sequence length (default: 0.10 = 10%%)")
     parser.add_argument("--dtype", default="bfloat16", choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
@@ -503,7 +505,7 @@ def main():
         num_gpus=args.num_gpus,
         dtype=dtype_map[args.dtype],
         device=args.device,
-        ppl_window_size=args.ppl_window_size,
+        ppl_window_frac=args.ppl_window_frac,
     )
 
 
