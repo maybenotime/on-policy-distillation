@@ -20,7 +20,7 @@ git pull
 
 if [ ! -d "test_env" ]; then
     echo "Creating virtualenv..."
-    uv venv test_env
+    uv venv test_env --python 3.12
     source test_env/bin/activate
     echo "Installing dependencies..."
     uv pip install -r requirements.txt
