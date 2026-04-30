@@ -57,9 +57,13 @@ def load_data(dataset_name: str):
         prompts = [row["question"] for row in dataset]
         gold_answers = [extract_gsm8k_answer(row["answer"]) for row in dataset]
     elif dataset_name == "math":
-        dataset = load_dataset("hendrycks/MATH", "all", split="train")
-        prompts = [row["problem"] for row in dataset]
-        gold_answers = [extract_math_answer(row["solution"]) for row in dataset]
+        subjects = ['algebra', 'counting_and_probability', 'geometry',
+                    'intermediate_algebra', 'number_theory', 'prealgebra', 'precalculus']
+        prompts, gold_answers = [], []
+        for subj in subjects:
+            ds = load_dataset("EleutherAI/hendrycks_math", subj, split="train")
+            prompts.extend([row["problem"] for row in ds])
+            gold_answers.extend([extract_math_answer(row["solution"]) for row in ds])
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
     return prompts, gold_answers
