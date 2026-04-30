@@ -1,24 +1,26 @@
 """
-Evaluate student and teacher on GSM8K training set and label each prompt
+Evaluate student and teacher on a dataset and label each prompt
 with correctness flags.
 
-Outputs a single JSONL file where each line contains:
-  - messages: ms-swift chat format
-  - answer: ground truth
-  - student_correct: bool
-  - teacher_correct: bool
-
-Downstream scripts can filter/group by these flags as needed (e.g. 2x2 design).
+Supports:
+  --dataset gsm8k          : openai/gsm8k train split
+  --dataset math           : hendrycks/MATH train split (all subjects)
 
 Usage:
     python source/split_by_correctness.py \
+        --dataset gsm8k \
         --student_model Qwen/Qwen2.5-0.5B-Instruct \
-        --teacher_model Qwen/Qwen2.5-3B-Instruct \
-        --output_path data/gsm8k_train_correctness.jsonl
+        --teacher_model Qwen/Qwen2.5-3B-Instruct
+
+    python source/split_by_correctness.py \
+        --dataset math \
+        --student_model Qwen/Qwen2.5-3B-Instruct \
+        --teacher_model Qwen/Qwen2.5-14B-Instruct
 """
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 import torch
@@ -40,6 +42,27 @@ def extract_gsm8k_answer(answer_str: str) -> str:
     if "####" in answer_str:
         return answer_str.split("####")[-1].strip()
     return answer_str.strip()
+
+
+def extract_math_answer(solution: str) -> str:
+    match = re.search(r'\\boxed\{(.+)\}', solution)
+    if match:
+        return match.group(1)
+    return solution.strip()
+
+
+def load_data(dataset_name: str):
+    if dataset_name == "gsm8k":
+        dataset = load_dataset("openai/gsm8k", "main", split="train")
+        prompts = [row["question"] for row in dataset]
+        gold_answers = [extract_gsm8k_answer(row["answer"]) for row in dataset]
+    elif dataset_name == "math":
+        dataset = load_dataset("hendrycks/MATH", "all", split="train")
+        prompts = [row["problem"] for row in dataset]
+        gold_answers = [extract_math_answer(row["solution"]) for row in dataset]
+    else:
+        raise ValueError(f"Unknown dataset: {dataset_name}")
+    return prompts, gold_answers
 
 
 def evaluate_completions(completions: list[str], gold_answers: list[str]) -> list[bool]:
@@ -78,22 +101,25 @@ def generate_with_vllm(model_name: str, prompts: list[str],
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", default="gsm8k", help="gsm8k or math")
     parser.add_argument("--student_model", default="Qwen/Qwen2.5-0.5B-Instruct")
     parser.add_argument("--teacher_model", default="Qwen/Qwen2.5-3B-Instruct")
-    parser.add_argument("--output_path", default="data/gsm8k_train_correctness.jsonl")
+    parser.add_argument("--output_path", default=None)
     parser.add_argument("--max_new_tokens", type=int, default=4096)
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--gpu_memory_utilization", type=float, default=0.85)
     args = parser.parse_args()
 
+    if args.output_path is None:
+        student_tag = args.student_model.split("/")[-1]
+        teacher_tag = args.teacher_model.split("/")[-1]
+        args.output_path = f"data/{args.dataset}_train_correctness_{student_tag}_{teacher_tag}.jsonl"
+
     output_path = Path(args.output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Load GSM8K training set
-    print("Loading GSM8K training set...")
-    dataset = load_dataset("openai/gsm8k", "main", split="train")
-    prompts = [row["question"] for row in dataset]
-    gold_answers = [extract_gsm8k_answer(row["answer"]) for row in dataset]
+    print(f"Loading {args.dataset} training set...")
+    prompts, gold_answers = load_data(args.dataset)
     print(f"Loaded {len(prompts)} prompts")
 
     # Student evaluation
