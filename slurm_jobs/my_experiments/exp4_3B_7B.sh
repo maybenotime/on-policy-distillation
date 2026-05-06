@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --gres=gpu:h100:4
 #SBATCH --mem=256G
-#SBATCH --time=8:00:00
+#SBATCH --time=15:00:00
 #SBATCH --output=logs/rethink_gap/%x-%j.out
 #SBATCH --error=logs/rethink_gap/%x-%j.err
 #SBATCH --mail-user=cta156@sfu.ca
