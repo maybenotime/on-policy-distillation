@@ -6,20 +6,18 @@ DATA_SIZE="${3:-5000}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
-export HF_HOME=/home/sya225/.cache/huggingface
-export MODELSCOPE_CACHE=/home/sya225/.cache/modelscope
-export TORCH_HOME=/home/sya225/.cache/torch
-export VLLM_CACHE_ROOT=/home/sya225/.cache/vllm
-export TMPDIR=/home/sya225/.cache/tmp
-export HF_DATASETS_CACHE=/home/sya225/.cache/huggingface/datasets
+export HF_HOME=/home/cta156/.cache/huggingface
+export MODELSCOPE_CACHE=/home/cta156/.cache/modelscope
+export TORCH_HOME=/home/cta156/.cache/torch
+export VLLM_CACHE_ROOT=/home/cta156/.cache/vllm
+export TMPDIR=/home/cta156/.cache/tmp
+export HF_DATASETS_CACHE=/home/cta156/.cache/huggingface/datasets
 
 mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
 
 HF_TOKEN="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"
 huggingface-cli login --token $HF_TOKEN
 
-export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
-export WANDB_PROJECT="on_policy_distill"
 
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
@@ -42,7 +40,7 @@ swift rlhf \
     --logging_steps 1 \
     --max_length 8192 \
     --max_completion_length 4096 \
-    --report_to wandb \
+    --report_to none \
     --output_dir "../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}" \
     --warmup_ratio 0.05 \
     --save_only_model true \

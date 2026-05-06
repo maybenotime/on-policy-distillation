@@ -1,0 +1,7 @@
+torch==2.9.1
+vllm==0.15.1
+ms-swift[llm]==4.0.0
+deepspeed==0.18.1
+flash_attn==2.8.3
+hf_transfer
+  
