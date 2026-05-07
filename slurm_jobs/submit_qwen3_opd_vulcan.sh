@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J qwen3-opd
-#SBATCH --account=sya225
+#SBATCH --account=aip-angelx
 #SBATCH --gres=gpu:l40s:4
 #SBATCH --cpus-per-task=64
 #SBATCH --time=11:00:00
@@ -21,9 +21,10 @@
 #   $4 = data size  (default 5000)
 #   $5 = train GPUs (default 3)
 
-REPO_DIR=/project/sya225/on-policy-distillation
+REPO_DIR=/project/aip-angelx/sya225/on-policy-distillation
 cd "$REPO_DIR"
 
+# Vulcan compute nodes — alliancecan module stack. Mirror Fir's env activation.
 module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv
 
 source test/bin/activate
@@ -47,7 +48,7 @@ fi
 STUDENT_TAG=$(basename "$STUDENT_MODEL")
 TEACHER_TAG=$(basename "$TEACHER_MODEL")
 
-OUTPUT_BASE="/scratch/sya225/output/qwen3_student_${STUDENT_TAG}_teacher_${TEACHER_TAG}_data${DATA_SIZE}"
+OUTPUT_BASE="/scratch/sya225/checkpoints/qwen3_student_${STUDENT_TAG}_teacher_${TEACHER_TAG}_data${DATA_SIZE}"
 
 # Save the latest checkpoint path on exit (covers SIGTERM/timeout)
 save_checkpoint() {
@@ -64,8 +65,9 @@ trap save_checkpoint EXIT
 cd scripts
 
 # Cache lives on /scratch (NOT /home — Vulcan home quota is small).
-export CACHE_BASE=/scratch/sya225/cache
-export OUTPUT_BASE_DIR=/scratch/sya225/output
+# Reuse the existing /scratch/sya225/hf_cache directory.
+export CACHE_BASE=/scratch/sya225/hf_cache
+export OUTPUT_BASE_DIR=/scratch/sya225/checkpoints
 
 # vLLM rollout server on GPU 0 (background)
 CUDA_VISIBLE_DEVICES=0 NPROC_PER_NODE=1 \
