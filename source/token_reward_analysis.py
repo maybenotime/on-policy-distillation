@@ -50,16 +50,27 @@ def load_model_and_tokenizer(model_name: str, dtype=torch.bfloat16, device="cuda
     return model, tokenizer
 
 
-def apply_chat_template_if_needed(prompts: list[str], tokenizer) -> list[str]:
-    """Wrap plain strings in a minimal chat template if the tokenizer supports it."""
+def apply_chat_template_if_needed(
+    prompts: list[str], tokenizer, enable_thinking=None
+) -> list[str]:
+    """Wrap plain strings in a minimal chat template if the tokenizer supports it.
+
+    `enable_thinking` is forwarded to `apply_chat_template` only when not None,
+    so Qwen2.5 callers (which pass nothing) keep their original behavior; Qwen3
+    callers pass False to inject the non-thinking prefix.
+    """
     if tokenizer.chat_template is None:
         return prompts
+    template_kwargs = {}
+    if enable_thinking is not None:
+        template_kwargs["enable_thinking"] = enable_thinking
     formatted = []
     for p in prompts:
         messages = [{"role": "user", "content": p}]
         formatted.append(
             tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
+                messages, tokenize=False, add_generation_prompt=True,
+                **template_kwargs,
             )
         )
     return formatted

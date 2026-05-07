@@ -271,6 +271,7 @@ def run_analysis(
     num_gpus: int = 1,
     dtype=torch.bfloat16,
     device: str = "cuda",
+    enable_thinking=None,
 ):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -280,7 +281,9 @@ def run_analysis(
         student_model_name, dtype=dtype, device=device
     )
 
-    formatted_prompts = apply_chat_template_if_needed(prompts, student_tokenizer)
+    formatted_prompts = apply_chat_template_if_needed(
+        prompts, student_tokenizer, enable_thinking=enable_thinking
+    )
 
     print(f"[Phase 1] Generating {len(prompts)} rollouts from student ...")
     prompt_ids_list, completion_ids_list = generate_completions(
@@ -330,7 +333,9 @@ def run_analysis(
         teacher_model_name, dtype=dtype, device=teacher_device
     )
 
-    teacher_formatted_prompts = apply_chat_template_if_needed(prompts, teacher_tokenizer)
+    teacher_formatted_prompts = apply_chat_template_if_needed(
+        prompts, teacher_tokenizer, enable_thinking=enable_thinking
+    )
 
     assert student_tokenizer.get_vocab() == teacher_tokenizer.get_vocab(), (
         f"Tokenizer mismatch: teacher '{teacher_model_name}' has a different vocabulary "
@@ -460,6 +465,11 @@ def main():
                         help="Window size as fraction of sequence length (default: 0.10 = 10%%)")
     parser.add_argument("--dtype", default="bfloat16", choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--enable_thinking", default="none", choices=["true", "false", "none"],
+        help="Forwarded to tokenizer.apply_chat_template for Qwen3-style hybrid models. "
+             "'none' (default) preserves Qwen2.5 behavior; 'false' adds the non-thinking prefix.",
+    )
     args = parser.parse_args()
 
     # Load prompts and answers
@@ -488,6 +498,9 @@ def main():
 
     use_vllm = args.use_vllm
 
+    enable_thinking_map = {"true": True, "false": False, "none": None}
+    enable_thinking = enable_thinking_map[args.enable_thinking]
+
     run_analysis(
         student_model_name=args.student_model,
         teacher_model_name=args.teacher_model,
@@ -506,6 +519,7 @@ def main():
         dtype=dtype_map[args.dtype],
         device=args.device,
         ppl_window_frac=args.ppl_window_frac,
+        enable_thinking=enable_thinking,
     )
 
 
