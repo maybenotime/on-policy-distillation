@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 #SBATCH -J qwen3-opd
 #SBATCH --account=aip-angelx
 #SBATCH --gres=gpu:l40s:4
