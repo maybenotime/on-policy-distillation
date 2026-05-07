@@ -5,6 +5,13 @@ with correctness flags.
 Supports:
   --dataset gsm8k          : openai/gsm8k train split
   --dataset math           : hendrycks/MATH train split (all subjects)
+  --dataset custom         : custom JSONL (requires --data_path)
+                             Each line must have: {"messages": [{"role":"user","content":"..."}], "answer": "..."}
+                             or: {"prompt": "...", "answer": "..."}
+
+Options:
+  --max_samples N          : limit to first N samples (for dry-run testing)
+  --data_path PATH         : path to JSONL when --dataset custom
 
 Usage:
     python source/split_by_correctness.py \
@@ -14,7 +21,14 @@ Usage:
 
     python source/split_by_correctness.py \
         --dataset math \
-        --student_model Qwen/Qwen2.5-3B-Instruct \
+        --max_samples 20 \
+        --student_model Qwen/Qwen2.5-0.5B-Instruct \
+        --teacher_model Qwen/Qwen2.5-14B-Instruct
+
+    python source/split_by_correctness.py \
+        --dataset custom \
+        --data_path ../data/prompts_math_swift.jsonl \
+        --student_model Qwen/Qwen2.5-0.5B-Instruct \
         --teacher_model Qwen/Qwen2.5-14B-Instruct
 """
 
@@ -51,7 +65,7 @@ def extract_math_answer(solution: str) -> str:
     return solution.strip()
 
 
-def load_data(dataset_name: str):
+def load_data(dataset_name: str, data_path: str = None, max_samples: int = None):
     if dataset_name == "gsm8k":
         dataset = load_dataset("openai/gsm8k", "main", split="train")
         prompts = [row["question"] for row in dataset]
@@ -64,8 +78,23 @@ def load_data(dataset_name: str):
             ds = load_dataset("EleutherAI/hendrycks_math", subj, split="train")
             prompts.extend([row["problem"] for row in ds])
             gold_answers.extend([extract_math_answer(row["solution"]) for row in ds])
+    elif dataset_name == "custom":
+        assert data_path, "--data_path is required when --dataset custom"
+        with open(data_path) as f:
+            items = [json.loads(l) for l in f if l.strip()]
+        prompts = [
+            item["messages"][0]["content"] if "messages" in item else item["prompt"]
+            for item in items
+        ]
+        gold_answers = [item["answer"] for item in items]
     else:
-        raise ValueError(f"Unknown dataset: {dataset_name}")
+        raise ValueError(f"Unknown dataset: {dataset_name}. Choose gsm8k / math / custom")
+
+    if max_samples is not None and max_samples < len(prompts):
+        prompts = prompts[:max_samples]
+        gold_answers = gold_answers[:max_samples]
+        print(f"[max_samples] Trimmed to {max_samples} prompts")
+
     return prompts, gold_answers
 
 
@@ -105,7 +134,9 @@ def generate_with_vllm(model_name: str, prompts: list[str],
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="gsm8k", help="gsm8k or math")
+    parser.add_argument("--dataset", default="gsm8k", help="gsm8k | math | custom")
+    parser.add_argument("--data_path", default=None, help="JSONL path when --dataset custom")
+    parser.add_argument("--max_samples", type=int, default=None, help="Limit to first N prompts (dry-run)")
     parser.add_argument("--student_model", default="Qwen/Qwen2.5-0.5B-Instruct")
     parser.add_argument("--teacher_model", default="Qwen/Qwen2.5-3B-Instruct")
     parser.add_argument("--output_path", default=None)
@@ -123,7 +154,7 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     print(f"Loading {args.dataset} training set...")
-    prompts, gold_answers = load_data(args.dataset)
+    prompts, gold_answers = load_data(args.dataset, args.data_path, args.max_samples)
     print(f"Loaded {len(prompts)} prompts")
 
     # Student evaluation

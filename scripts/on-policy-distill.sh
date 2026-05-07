@@ -3,6 +3,7 @@
 STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
 TEACHER_MODEL="${2:-Qwen/Qwen2.5-3B-Instruct}"
 DATA_SIZE="${3:-5000}"
+DATA_PATH="${4:-../data/prompts_math_swift.jsonl}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
@@ -26,7 +27,7 @@ swift rlhf \
     --model "$STUDENT_MODEL" \
     --teacher_model "$TEACHER_MODEL" \
     --train_type full \
-    --dataset "../data/prompts_math_swift.jsonl#${DATA_SIZE}" \
+    --dataset "${DATA_PATH}#${DATA_SIZE}" \
     --seq_kd false \
     --lmbda 1 \
     --beta 1 \
