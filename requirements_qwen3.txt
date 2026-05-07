@@ -1,0 +1,9 @@
+torch==2.9.1
+vllm==0.15.1
+ms-swift==4.0.0
+deepspeed==0.18.1
+flash_attn==2.8.3
+evalscope==1.4.2
+wandb==0.25.1
+matplotlib
+math_verify
