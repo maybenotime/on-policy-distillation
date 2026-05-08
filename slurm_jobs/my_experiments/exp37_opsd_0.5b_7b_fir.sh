@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
 #SBATCH --gres=gpu:h100:1
-#SBATCH --mem=128G
+#SBATCH --mem=256G
 #SBATCH --time=6:00:00
 #SBATCH --output=logs/rethink_gap/%x-%j.out
 #SBATCH --error=logs/rethink_gap/%x-%j.err
