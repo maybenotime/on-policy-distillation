@@ -152,11 +152,12 @@ def contingency_table(all_data: list[tuple[str, dict]], output_path: Path):
     print(f"Saved contingency table → {output_path}")
 
 
-def write_case_studies(all_data, output_path, max_examples_per_label: int = 5):
+def write_case_studies(all_data, output_path, max_examples_per_label: int = 8):
     lines = ["# Reflection-Recovery Case Studies\n",
              "Concrete examples where the teacher emitted a reflection keyword "
              "(in first 100 tokens of its continuation) AND ended up producing "
-             "the correct final answer.\n"]
+             "the correct final answer. Deduplicated to one example per "
+             "(trajectory, position) — at most one entry per student trajectory.\n"]
     for label, data in all_data:
         rec = data.get("sampling_records", [])
         if not rec:
@@ -175,15 +176,23 @@ def write_case_studies(all_data, output_path, max_examples_per_label: int = 5):
         if not examples:
             lines.append("(no recovery examples found)\n")
             continue
-        # Show up to max_examples_per_label, prefer later positions (more impressive)
+        # Dedupe to ONE example per trajectory (prefer later positions).
         examples.sort(key=lambda e: -e["position_fraction"])
-        for ex in examples[:max_examples_per_label]:
+        seen_traj = set()
+        unique = []
+        for e in examples:
+            if e["trajectory_idx"] in seen_traj:
+                continue
+            seen_traj.add(e["trajectory_idx"])
+            unique.append(e)
+        for ex in unique[:max_examples_per_label]:
             lines.append(f"\n**Trajectory {ex['trajectory_idx']}, prefix at "
                          f"{ex['position_fraction']*100:.0f}%**")
             lines.append("```")
             lines.append(ex["first_chars"])
             lines.append("```")
-        lines.append(f"\n(total recovery examples: {len(examples)})\n")
+        lines.append(f"\n_Total recovery examples: {len(examples)} across "
+                     f"{len(seen_traj)} unique trajectories._\n")
     output_path.write_text("\n".join(lines))
     print(f"Saved case studies → {output_path}")
 
