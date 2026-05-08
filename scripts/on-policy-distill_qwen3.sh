@@ -11,6 +11,7 @@ TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
 CACHE_BASE="${CACHE_BASE:-/scratch/sya225/hf_cache}"
 OUTPUT_BASE_DIR="${OUTPUT_BASE_DIR:-/scratch/sya225/checkpoints}"
+SAVE_STEPS="${SAVE_STEPS:-200}"
 
 # Respect pre-set HF_HOME (caller may already point at an existing model cache).
 export HF_HOME="${HF_HOME:-$CACHE_BASE}"
@@ -45,7 +46,7 @@ swift rlhf \
     --per_device_train_batch_size 1 \
     --learning_rate 1e-5 \
     --gradient_accumulation_steps 4 \
-    --save_steps 1000 \
+    --save_steps "$SAVE_STEPS" \
     --save_total_limit 2 \
     --logging_steps 1 \
     --max_length 8192 \
