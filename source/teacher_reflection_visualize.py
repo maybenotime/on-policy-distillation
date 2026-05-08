@@ -144,7 +144,7 @@ def contingency_table(all_data: list[tuple[str, dict]], output_path: Path):
             lines.append(f"| Reflection   | {a:5d}   | {b:9d}   |")
             lines.append(f"| No-reflection| {c:5d}   | {d:9d}   |")
             lines.append(f"")
-            lines.append(f"- P(reflection in first 50 tokens) = {p_reflect:.3f}")
+            lines.append(f"- P(reflection in first 100 tokens) = {p_reflect:.3f}")
             lines.append(f"- P(correct | reflection) = {p_correct_given_refl:.3f}")
             lines.append(f"- P(correct | no reflection) = {p_correct_given_no_refl:.3f}")
             lines.append(f"- Recovery uplift = {p_correct_given_refl - p_correct_given_no_refl:+.3f}\n")
@@ -155,7 +155,7 @@ def contingency_table(all_data: list[tuple[str, dict]], output_path: Path):
 def write_case_studies(all_data, output_path, max_examples_per_label: int = 5):
     lines = ["# Reflection-Recovery Case Studies\n",
              "Concrete examples where the teacher emitted a reflection keyword "
-             "(in first 50 tokens of its continuation) AND ended up producing "
+             "(in first 100 tokens of its continuation) AND ended up producing "
              "the correct final answer.\n"]
     for label, data in all_data:
         rec = data.get("sampling_records", [])

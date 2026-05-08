@@ -167,7 +167,7 @@ def run_logits_probe(teacher_model, teacher_tokenizer, records,
 def run_sampling_probe(teacher_model_name, records, answers, position_fractions,
                        num_samples, max_new_tokens, temperature,
                        gpu_memory_utilization, dtype, teacher_tokenizer,
-                       reflection_first_n_tokens: int = 50):
+                       reflection_first_n_tokens: int = 100):
     """For each record, at each position fraction, sample N teacher
     continuations from prompt+completion[:pos]. Record:
       - whether the sample contains a reflection keyword in first K tokens
