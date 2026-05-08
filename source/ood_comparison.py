@@ -34,18 +34,25 @@ from ood_visualization import (
 
 STUDENT_COLORS = {
     "0.5B": "#1f77b4",
+    "1.7B": "#9467bd",
+    "1.7B-Base": "#8c564b",
     "3B": "#ff7f0e",
     "7B": "#2ca02c",
     "14B": "#d62728",
 }
 
-STUDENT_ORDER = ["0.5B", "3B", "7B", "14B"]
+STUDENT_ORDER = ["0.5B", "1.7B-Base", "1.7B", "3B", "7B", "14B"]
 
 
 def get_student_label(model_name: str) -> str:
     name = Path(model_name).name
+    # Prefer the most specific match: -Base variants before bare size tags.
+    if "1.7B-Base" in name:
+        return "1.7B-Base"
+    if "1.7B" in name:
+        return "1.7B"
     for tag in STUDENT_ORDER:
-        if tag in name:
+        if tag in name and tag not in ("1.7B", "1.7B-Base"):
             return tag
     return name
 
