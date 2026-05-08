@@ -38,7 +38,7 @@ echo "Evaluating $MODEL (enable_thinking=$ENABLE_THINKING)"
 echo "Output dir: $EVAL_OUT"
 
 CUDA_VISIBLE_DEVICES=0 \
-swift eval \
+python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
     --use_hf true \
     "${EVAL_ARGS[@]}" \
     --enable_thinking "$ENABLE_THINKING" \
