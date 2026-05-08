@@ -60,7 +60,11 @@ if [ -z "$CHECKPOINT" ]; then
     exit 1
 fi
 
-if [ ! -d "$CHECKPOINT" ]; then
+# If $CHECKPOINT looks like an HF model id (e.g. Qwen/Qwen3-1.7B), skip
+# the directory check — swift will resolve it via huggingface_hub.
+if [[ "$CHECKPOINT" != /* && "$CHECKPOINT" == */* && ! -d "$CHECKPOINT" ]]; then
+    echo "Treating '$CHECKPOINT' as a HuggingFace model id (not a local path)."
+elif [ ! -d "$CHECKPOINT" ]; then
     echo "ERROR: resolved checkpoint dir does not exist: $CHECKPOINT" >&2
     exit 1
 fi
