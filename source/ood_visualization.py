@@ -27,15 +27,16 @@ import matplotlib.pyplot as plt
 
 
 NUM_BINS = 100
-DEFAULT_PPL_WINDOW_SIZE = 50
+DEFAULT_PPL_WINDOW_FRAC = 0.10
 
 
-def compute_sliding_window_ppl(logps, window_size: int = DEFAULT_PPL_WINDOW_SIZE) -> np.ndarray:
-    """Compute sliding window PPL from per-token log probs. Works with torch tensors or numpy arrays."""
+def compute_sliding_window_ppl(logps, window_frac: float = DEFAULT_PPL_WINDOW_FRAC) -> np.ndarray:
+    """Compute sliding window PPL with window size as a fraction of sequence length."""
     if isinstance(logps, torch.Tensor):
         logps = logps.float().numpy()
     logps = np.asarray(logps, dtype=np.float64)
     T = len(logps)
+    window_size = max(1, int(T * window_frac))
     result = np.full(T, np.nan)
     cumsum = np.cumsum(logps)
     for i in range(T):
@@ -51,11 +52,20 @@ def load_results(input_path: str) -> dict:
         return pickle.load(f)
 
 
-def bin_by_relative_position(values_list: list[np.ndarray], num_bins: int = NUM_BINS):
+def winsorize(arr: np.ndarray, lower: float = 5.0, upper: float = 95.0) -> np.ndarray:
+    """Clip values to [P_lower, P_upper] percentiles."""
+    lo_val = np.percentile(arr, lower)
+    hi_val = np.percentile(arr, upper)
+    return np.clip(arr, lo_val, hi_val)
+
+
+def bin_by_relative_position(values_list: list[np.ndarray], num_bins: int = NUM_BINS,
+                             do_winsorize: bool = True):
     """
     Bin variable-length per-token arrays into fixed percentile buckets.
     Each rollout is first reduced to one value per bin (mean within that rollout's
     tokens falling in the bin), then we average across rollouts for equal weighting.
+    Per-bin winsorization (P5–P95) is applied before computing mean+CI to suppress outliers.
     Returns (bin_centers, mean_per_bin, ci_lower, ci_upper).
     """
     bin_centers = np.linspace(0, 100, num_bins)
@@ -81,6 +91,8 @@ def bin_by_relative_position(values_list: list[np.ndarray], num_bins: int = NUM_
         col = per_rollout[:, i]
         valid = col[~np.isnan(col)]
         if len(valid) >= 2:
+            if do_winsorize:
+                valid = winsorize(valid)
             means[i] = np.mean(valid)
             se = np.std(valid, ddof=1) / np.sqrt(len(valid))
             ci_lo[i] = means[i] - 1.96 * se
@@ -333,8 +345,8 @@ def main():
     parser.add_argument("--output_dir", default="results/")
     parser.add_argument("--format", default="pdf", choices=["pdf", "png"])
     parser.add_argument("--dpi", type=int, default=150)
-    parser.add_argument("--ppl_window_size", type=int, default=DEFAULT_PPL_WINDOW_SIZE,
-                        help="Window size for sliding window PPL computation")
+    parser.add_argument("--ppl_window_frac", type=float, default=DEFAULT_PPL_WINDOW_FRAC,
+                        help="Window size as fraction of sequence length (default: 0.10 = 10%%)")
     args = parser.parse_args()
 
     data = load_results(args.input_path)
@@ -344,8 +356,8 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for r in records:
-        if "sliding_window_ppl" not in r and "teacher_logps" in r:
-            r["sliding_window_ppl"] = compute_sliding_window_ppl(r["teacher_logps"], args.ppl_window_size)
+        if "teacher_logps" in r:
+            r["sliding_window_ppl"] = compute_sliding_window_ppl(r["teacher_logps"], args.ppl_window_frac)
 
     correct, incorrect = split_by_correctness(records)
     print(f"Loaded {len(records)} records: {len(correct)} correct, {len(incorrect)} incorrect")
@@ -363,8 +375,8 @@ def main():
     # Figure 1b: Sliding Window PPL
     fig1b, ax1b = plt.subplots(figsize=(10, 6))
     plot_metric_by_correctness(ax1b, correct, incorrect, "sliding_window_ppl",
-                               f"Sliding Window PPL (w={args.ppl_window_size})",
-                               f"Teacher Sliding Window PPL (window={args.ppl_window_size}) on Student Trajectories")
+                               f"Sliding Window PPL (w={int(args.ppl_window_frac*100)}%)",
+                               f"Teacher Sliding Window PPL (window={int(args.ppl_window_frac*100)}%) on Student Trajectories")
     fig1b.tight_layout()
     fig1b.savefig(output_dir / f"ood_sliding_ppl_{tag}.{args.format}", dpi=args.dpi)
     print(f"Saved figure: ood_sliding_ppl_{tag}.{args.format}")
