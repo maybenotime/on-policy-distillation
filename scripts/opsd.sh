@@ -78,4 +78,4 @@ swift rlhf \
     --padding_free false \
     --attn_impl flash_attn \
     --output_dir "$OUTPUT" \
-    --report_to wandb
+    --report_to "${REPORT_TO:-none}"
