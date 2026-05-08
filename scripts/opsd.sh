@@ -42,6 +42,10 @@ echo "OPSD_TEACHER_MODELS= $OPSD_TEACHER_MODELS"
 echo "OPSD_DATA_PATH     = $OPSD_DATA_PATH"
 echo "Output dir         = $OUTPUT"
 
+# Unique port per job to avoid EADDRINUSE when multiple OPSD jobs share a node
+export MASTER_PORT="${MASTER_PORT:-$((29500 + ${SLURM_JOB_ID:-0} % 10000))}"
+echo "MASTER_PORT        = $MASTER_PORT"
+
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 NPROC_PER_NODE=1 \
 swift rlhf \
