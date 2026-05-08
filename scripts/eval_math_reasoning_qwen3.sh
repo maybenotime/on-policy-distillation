@@ -37,6 +37,13 @@ mkdir -p "$EVAL_OUT"
 echo "Evaluating $MODEL (enable_thinking=$ENABLE_THINKING)"
 echo "Output dir: $EVAL_OUT"
 
+EVAL_DATASETS="${EVAL_DATASETS:-gsm8k math_500}"
+EVAL_MAX_NEW_TOKENS="${EVAL_MAX_NEW_TOKENS:-4096}"
+
+# Note: aime24/aime25/amc skipped — their HF datasets (Maxwell-Jia/AIME_2024
+# etc.) use different field names than evalscope adapters expect. Only gsm8k
+# (openai/gsm8k) and math_500 (HuggingFaceH4/MATH-500) match cleanly.
+
 CUDA_VISIBLE_DEVICES=0 \
 python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
     --use_hf true \
@@ -44,8 +51,9 @@ python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
     --enable_thinking "$ENABLE_THINKING" \
     --eval_backend Native \
     --infer_backend vllm \
-    --eval_dataset gsm8k aime24 aime25 amc math_500 \
+    --eval_dataset $EVAL_DATASETS \
     --eval_output_dir "$EVAL_OUT" \
     --vllm_gpu_memory_utilization 0.8 \
     --vllm_max_model_len 16384 \
-    --eval_num_proc 100
+    --eval_num_proc 100 \
+    --max_new_tokens "$EVAL_MAX_NEW_TOKENS"
