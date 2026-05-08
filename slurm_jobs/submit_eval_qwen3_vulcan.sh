@@ -26,7 +26,9 @@ cd /project/aip-angelx/sya225/on-policy-distillation
 
 module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv
 
-source test/bin/activate
+# Use eval_test venv (has opencompass+evalscope; numpy<2 pinned for compat).
+# `swift eval --eval_backend Native` actually triggers opencompass imports.
+source eval_test/bin/activate
 
 mkdir -p logs
 
