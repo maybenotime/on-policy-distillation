@@ -37,6 +37,7 @@ TEACHER_MODEL=${2:-"Qwen/Qwen3-8B"}
 PROMPTS_FILE=${3:-"data/ood_math_100.jsonl"}
 NUM_ROLLOUTS=${4:-10}
 ENABLE_THINKING=${5:-"false"}
+MAX_NEW_TOKENS=${MAX_NEW_TOKENS:-8192}
 
 STUDENT_TAG=$(basename "$STUDENT_MODEL")
 TEACHER_TAG=$(basename "$TEACHER_MODEL")
@@ -54,6 +55,7 @@ python source/ood_analysis.py \
     --output_path "$OUTPUT_PATH" \
     --num_rollouts "$NUM_ROLLOUTS" \
     --num_sample_positions 10 \
+    --max_new_tokens "$MAX_NEW_TOKENS" \
     --batch_size 2 \
     --use_vllm \
     --vllm_gpu_memory_utilization 0.8 \
