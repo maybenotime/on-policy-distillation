@@ -24,7 +24,7 @@ DATA_SIZE="${DATA_SIZE:-840}"
 export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
 export WANDB_PROJECT="on_policy_self_distill"
 
-MODEL="Qwen/Qwen2.5-0.5B-Instruct"
+MODEL="${MODEL:-Qwen/Qwen2.5-0.5B-Instruct}"
 MODEL_TAG="${MODEL##*/}"
 export OPSD_DATA_PATH="${OPSD_DATA_PATH:-../data/math_all_teachers_correct.jsonl}"
 
@@ -54,7 +54,7 @@ swift rlhf \
     --tuner_type full \
     --use_vllm true \
     --vllm_mode colocate \
-    --vllm_gpu_memory_utilization 0.4 \
+    --vllm_gpu_memory_utilization "${VLLM_UTIL:-0.4}" \
     --vllm_max_model_len 2048 \
     --sleep_level 1 \
     --lmbda 1.0 \
@@ -62,7 +62,7 @@ swift rlhf \
     --temperature 1.0 \
     --sft_alpha 0 \
     --torch_dtype bfloat16 \
-    --max_steps 200 \
+    --max_steps "${MAX_STEPS:-200}" \
     --per_device_train_batch_size 1 \
     --gradient_accumulation_steps 16 \
     --learning_rate 2e-5 \
