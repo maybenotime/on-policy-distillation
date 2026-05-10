@@ -72,7 +72,7 @@ ROLLOUT_PID=$!
 sleep 30
 
 echo "Start Phase 2 GKD training (dry run)"
-CUDA_VISIBLE_DEVICES=1,2,3 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
+CUDA_VISIBLE_DEVICES=1,2,3 NPROC_PER_NODE=3 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
     --rlhf_type gkd \
     --use_hf true \
