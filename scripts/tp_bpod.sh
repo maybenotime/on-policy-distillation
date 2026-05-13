@@ -33,22 +33,25 @@ export PREFIX_FILTER_CORRECT="${PREFIX_FILTER_CORRECT:-1}"
 export PREFIX_FILTER_COMPLETE="${PREFIX_FILTER_COMPLETE:-1}"
 export PREFIX_STUDENT_MODEL="${PREFIX_STUDENT_MODEL:-$STUDENT_MODEL}"
 
-export HF_HOME=/home/sya225/.cache/huggingface
-export MODELSCOPE_CACHE=/home/sya225/.cache/modelscope
-export TORCH_HOME=/home/sya225/.cache/torch
-export VLLM_CACHE_ROOT=/home/sya225/.cache/vllm
-export TMPDIR=/home/sya225/.cache/tmp
-export HF_DATASETS_CACHE=/home/sya225/.cache/huggingface/datasets
+CACHE_BASE="${CACHE_BASE:-/home/sya225/.cache}"
+OUTPUT_BASE_DIR="${OUTPUT_BASE_DIR:-/localscratch/sya225/output}"
 
-mkdir -p $HF_HOME $MODELSCOPE_CACHE $TORCH_HOME $VLLM_CACHE_ROOT $TMPDIR
+export HF_HOME="${HF_HOME:-$CACHE_BASE/huggingface}"
+export MODELSCOPE_CACHE="${MODELSCOPE_CACHE:-$CACHE_BASE/modelscope}"
+export TORCH_HOME="${TORCH_HOME:-$CACHE_BASE/torch}"
+export VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-$CACHE_BASE/vllm}"
+export TMPDIR="${TMPDIR:-$CACHE_BASE/tmp}"
+export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$HF_HOME/datasets}"
+
+mkdir -p "$HF_HOME" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$VLLM_CACHE_ROOT" "$TMPDIR"
 
 HF_TOKEN="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"
 huggingface-cli login --token $HF_TOKEN
 
 export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
-export WANDB_PROJECT="prefix_curriculum_opd"
+export WANDB_PROJECT="${WANDB_PROJECT:-prefix_curriculum_opd}"
 
-OUTPUT_DIR="/localscratch/sya225/output/tp_bpod_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_K${PREFIX_K}_delta${PREFIX_DELTA}_q0${PREFIX_Q0}_filter${PREFIX_FILTER_CORRECT}_data${DATA_SIZE}"
+OUTPUT_DIR="${OUTPUT_BASE_DIR}/tp_bpod_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_K${PREFIX_K}_delta${PREFIX_DELTA}_q0${PREFIX_Q0}_filter${PREFIX_FILTER_CORRECT}_data${DATA_SIZE}"
 
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
