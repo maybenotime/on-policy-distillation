@@ -4,6 +4,7 @@ STUDENT_MODEL="${1:-Qwen/Qwen2.5-0.5B-Instruct}"
 TEACHER_MODEL="${2:-Qwen/Qwen2.5-3B-Instruct}"
 DATA_SIZE="${3:-5000}"
 DATA_PATH="${4:-../data/prompts_math_swift.jsonl}"
+DS_STAGE="${5:-zero3}"
 STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
@@ -61,4 +62,3 @@ OUTPUT_BASE="../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}
 CHECKPOINT=$(find "$OUTPUT_BASE" -name "checkpoint-*" -type d | sort -V | tail -1)
 echo "$CHECKPOINT" > ../checkpoint_path_${SLURM_JOB_ID}.txt
 echo "Checkpoint saved: $CHECKPOINT"
-ed: $CHECKPOINT"
