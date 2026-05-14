@@ -102,7 +102,7 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
         import inspect
         from contextlib import nullcontext
         from swift.infer_engine.protocol import RolloutInferRequest, RequestConfig
-        from swift.utils.torch_utils import aggressive_empty_cache, set_expandable_segments
+        from swift.rlhf_trainers.utils import aggressive_empty_cache, set_expandable_segments
 
         args = self.args
         gen_cfg = self.generation_config
