@@ -18,14 +18,14 @@ QWEN_STUDENT_PROMPT_TEMPLATE = (
 
 QWEN_TEACHER_PROMPT_TEMPLATE = (
     "<|im_start|>system\n"
-    "You are a helpful math assistant. Reason step by step and put the final answer within \\boxed{}."
+    "You are a helpful math assistant. Reason step by step and put the final answer within \\boxed{{}}."
     "<|im_end|>\n"
     "<|im_start|>user\n"
     "Problem:\n{problem}\n\n"
     "The correct final answer is:\n{answer}\n\n"
     "A student has started the solution as follows:\n{prefix}\n\n"
     "Continue from the student's reasoning when possible. If the prefix contains an error, correct it naturally. "
-    "Derive the final answer step by step and put the final answer within \\boxed{}."
+    "Derive the final answer step by step and put the final answer within \\boxed{{}}."
     "<|im_end|>\n"
     "<|im_start|>assistant\n"
     "<|thought|>\n"
