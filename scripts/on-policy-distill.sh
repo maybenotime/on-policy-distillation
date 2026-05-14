@@ -47,7 +47,7 @@ swift rlhf \
     --save_only_model true \
     --dataloader_num_workers 16 \
     --dataset_num_proc 4 \
-    --deepspeed zero2 \
+    --deepspeed "$DS_STAGE" \
     --gradient_checkpointing true \
     --attn_impl flash_attn \
     --padding_free False \
@@ -61,3 +61,4 @@ OUTPUT_BASE="../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}
 CHECKPOINT=$(find "$OUTPUT_BASE" -name "checkpoint-*" -type d | sort -V | tail -1)
 echo "$CHECKPOINT" > ../checkpoint_path_${SLURM_JOB_ID}.txt
 echo "Checkpoint saved: $CHECKPOINT"
+ed: $CHECKPOINT"

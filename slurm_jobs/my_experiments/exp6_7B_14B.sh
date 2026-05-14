@@ -38,7 +38,9 @@ echo "Start training"
 CUDA_VISIBLE_DEVICES=1,2,3 NPROC_PER_NODE=3 bash on-policy-distill.sh \
 	Qwen/Qwen2.5-7B-Instruct \
 	Qwen/Qwen2.5-14B-Instruct \
-	5000
+	5000 \
+	../data/prompts_math_swift.jsonl \
+	zero3
 echo "Training finished"
 
 kill $ROLLOUT_PID
