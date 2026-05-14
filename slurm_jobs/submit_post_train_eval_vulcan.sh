@@ -34,13 +34,16 @@ module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv
 
 mkdir -p logs results/pinned_curves
 
-# Reuse existing Vulcan cache; both venvs share these.
+# Reuse existing Vulcan cache; both venvs + benchmark eval scripts read these.
 export HF_HOME=/scratch/sya225/hf_cache
 export HF_DATASETS_CACHE=/scratch/sya225/hf_cache/datasets
 export TRANSFORMERS_CACHE=/scratch/sya225/hf_cache
+export MODELSCOPE_CACHE=/scratch/sya225/hf_cache/modelscope
+export TORCH_HOME=/scratch/sya225/hf_cache/torch
 export VLLM_CACHE_ROOT=/scratch/sya225/hf_cache/vllm
 export TMPDIR=/scratch/sya225/hf_cache/tmp
-mkdir -p "$TMPDIR" "$VLLM_CACHE_ROOT"
+export EVAL_OUTPUT_BASE=/scratch/sya225/eval_output
+mkdir -p "$TMPDIR" "$VLLM_CACHE_ROOT" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$EVAL_OUTPUT_BASE"
 
 RUN_TAG=$(basename "$RUN_DIR")
 

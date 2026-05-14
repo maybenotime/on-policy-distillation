@@ -10,12 +10,12 @@ MODEL="${1:-${MODEL:-Qwen/Qwen3-1.7B}}"
 MODEL_TAG="${MODEL##*/}"
 ENABLE_THINKING="${ENABLE_THINKING:-false}"
 
-# Vulcan cache paths (reuse existing /scratch/sya225/hf_cache).
-export HF_HOME=/scratch/sya225/hf_cache
-export HF_DATASETS_CACHE=/scratch/sya225/hf_cache/datasets
-export TRANSFORMERS_CACHE=/scratch/sya225/hf_cache
-export VLLM_CACHE_ROOT=/scratch/sya225/hf_cache/vllm
-export TMPDIR=/scratch/sya225/hf_cache/tmp
+# Caches (overridable; Vulcan sets these to /scratch/sya225/hf_cache).
+export HF_HOME="${HF_HOME:-/scratch/sya225/hf_cache}"
+export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$HF_HOME/datasets}"
+export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME}"
+export VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-$HF_HOME/vllm}"
+export TMPDIR="${TMPDIR:-$HF_HOME/tmp}"
 mkdir -p "$TMPDIR" "$VLLM_CACHE_ROOT"
 
 # Detect LoRA adapter checkpoints.
@@ -31,21 +31,17 @@ else
     EVAL_ARGS=(--model "$MODEL")
 fi
 
-EVAL_OUT="/scratch/sya225/eval_output/${MODEL_TAG}_thinking-${ENABLE_THINKING}"
+EVAL_OUT="${EVAL_OUTPUT_BASE:-/scratch/sya225/eval_output}/${MODEL_TAG}_thinking-${ENABLE_THINKING}"
 mkdir -p "$EVAL_OUT"
 
 echo "Evaluating $MODEL (enable_thinking=$ENABLE_THINKING)"
 echo "Output dir: $EVAL_OUT"
 
-EVAL_DATASETS="${EVAL_DATASETS:-gsm8k math_500}"
+EVAL_DATASETS="${EVAL_DATASETS:-gsm8k aime24 aime25 amc math_500}"
 EVAL_MAX_NEW_TOKENS="${EVAL_MAX_NEW_TOKENS:-4096}"
 
-# Note: aime24/aime25/amc skipped — their HF datasets (Maxwell-Jia/AIME_2024
-# etc.) use different field names than evalscope adapters expect. Only gsm8k
-# (openai/gsm8k) and math_500 (HuggingFaceH4/MATH-500) match cleanly.
-
 CUDA_VISIBLE_DEVICES=0 \
-python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
+swift eval \
     --use_hf true \
     "${EVAL_ARGS[@]}" \
     --enable_thinking "$ENABLE_THINKING" \
