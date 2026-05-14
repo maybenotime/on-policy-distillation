@@ -61,7 +61,7 @@ logger.info(
 
 def _install_prompt_token_ids_patch() -> None:
     from swift.template.base import Template
-    from swift.template.template_inputs import TemplateInputs
+    from swift.template.template_inputs import StdTemplateInputs
 
     _orig_encode = Template.encode
 
@@ -93,8 +93,13 @@ def _install_prompt_token_ids_patch() -> None:
             if return_length:
                 encoded['length'] = len(ids)
             if return_template_inputs:
-                encoded['template_inputs'] = TemplateInputs.from_dict(
-                    {'messages': [{'role': 'user', 'content': ''}]}
+                # _create_chat_completion_response reads `.images / .audios /
+                # .videos` on the template_inputs object, so we hand back a
+                # StdTemplateInputs (which the upstream code path also returns
+                # here — see template/base.py:572 `encoded['template_inputs'] =
+                # chosen`).
+                encoded['template_inputs'] = StdTemplateInputs(
+                    messages=[{'role': 'user', 'content': ''}]
                 )
             return encoded
 
