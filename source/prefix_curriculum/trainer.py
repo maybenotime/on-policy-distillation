@@ -151,12 +151,13 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
                 set_expandable_segments(True)
 
         # 4. Parse generated token IDs (suffix only — vLLM does not echo prompt).
+        # GRPOVllmEngine.infer wraps responses in `RolloutOutput`, which has
+        # `.response: ChatCompletionResponse` → `.choices[0].token_ids`.
         suffix_token_ids_list: List[List[int]] = []
         for output in rollout_outputs:
-            choice = output.choices[0] if hasattr(output, 'choices') else output['choices'][0]
+            resp = getattr(output, 'response', None) or output
+            choice = resp.choices[0]
             tids = getattr(choice, 'token_ids', None)
-            if tids is None and isinstance(choice, dict):
-                tids = choice.get('token_ids')
             suffix_token_ids_list.append(list(tids) if tids else [])
 
         # 5. Assemble [prompt + prefix + suffix] with correct labels mask.
