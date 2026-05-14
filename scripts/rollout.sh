@@ -11,13 +11,25 @@ export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$HF_HOME/datasets}"
 
 mkdir -p "$HF_HOME" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$VLLM_CACHE_ROOT" "$TMPDIR"
 
-swift rollout \
-    --model "$STUDENT_MODEL" \
-    --vllm_data_parallel_size 1 \
-    --use_hf true \
-    --torch_dtype bfloat16 \
-    --attn_impl flash_attention_2 \
-    --padding_free true \
-    --host 0.0.0.0 \
-    --port 8000 \
+# When PREFIX_PREFILL=1, run a wrapper that monkey-patches Template.encode to
+# accept raw prompt_token_ids via RolloutInferRequest.data_dict. Required for
+# TP-BPOD (Phase 2 backward direction). Standard swift rollout otherwise.
+ROLLOUT_ARGS=(
+    --model "$STUDENT_MODEL"
+    --vllm_data_parallel_size 1
+    --use_hf true
+    --torch_dtype bfloat16
+    --attn_impl flash_attention_2
+    --padding_free true
+    --host 0.0.0.0
+    --port 8000
     --load_from_cache_file false
+)
+
+if [ "${PREFIX_PREFILL:-0}" = "1" ]; then
+    REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+    export PYTHONPATH="${REPO_ROOT}/source:${PYTHONPATH:-}"
+    exec python "${REPO_ROOT}/source/prefix_curriculum/rollout_with_prefill.py" "${ROLLOUT_ARGS[@]}"
+else
+    exec swift rollout "${ROLLOUT_ARGS[@]}"
+fi

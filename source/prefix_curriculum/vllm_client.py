@@ -1,13 +1,14 @@
-"""vLLM /v1/completions client for TP-BPOD rollout.
+"""swift rollout `/infer/` client for TP-BPOD.
 
-The vLLM rollout server (started by `scripts/rollout.sh` and used by Phase 1
-SP-FPOD via `/v1/chat/completions`) also exposes `/v1/completions`, which
-accepts raw token IDs as the `prompt` field. For TP-BPOD we need to send
-`prompt = chat_template_prompt_ids + teacher_prefix_ids` so the student
-generates conditioned on the teacher's partial solution.
+ms-swift's rollout server (started by `swift rollout`) exposes only a custom
+`/infer/` endpoint, not vLLM's stock `/v1/completions`. To inject a raw
+prompt-token sequence we ride on the `RolloutInferRequest.data_dict` field as
+a carrier — a sibling wrapper script (`rollout_with_prefill.py`) patches
+`Template.encode` server-side to honor `data_dict['prompt_token_ids']` and
+skip chat-template encoding.
 
-This module adapts the pattern from `swift/rlhf_trainers/gkd_trainer.py:714`
-(`fetch_teacher_logprobs`) for generation rather than logprob extraction.
+Returns generated token IDs (the student-written suffix only — vLLM does
+not echo the prompt+prefix block).
 """
 
 from __future__ import annotations
@@ -20,21 +21,6 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-_MODEL_NAME_CACHE: Optional[str] = None
-
-
-def _resolve_model_name(base_url: str, timeout: float = 10.0) -> str:
-    """Discover the model id served by the vLLM rollout server."""
-    global _MODEL_NAME_CACHE
-    if _MODEL_NAME_CACHE is not None:
-        return _MODEL_NAME_CACHE
-    try:
-        resp = requests.get(f'{base_url}/v1/models', timeout=timeout)
-        _MODEL_NAME_CACHE = resp.json()['data'][0]['id'] if resp.ok else 'default'
-    except Exception:
-        _MODEL_NAME_CACHE = 'default'
-    return _MODEL_NAME_CACHE
-
 
 def vllm_complete(
     base_url: str,
@@ -45,34 +31,25 @@ def vllm_complete(
     timeout: float = 600.0,
     max_workers: int = 8,
 ) -> List[List[int]]:
-    """POST raw token_ids to vLLM /v1/completions; return generated token_ids.
+    """POST `prompt_token_ids` to swift rollout `/infer/`; return generated tokens.
 
     Args:
-        base_url: vLLM server base URL, e.g. 'http://127.0.0.1:8000'.
-        prompt_token_ids_list: List of per-sample prompt token-id sequences.
-            For TP-BPOD each is `chat_template_prompt_ids + teacher_prefix_ids`.
-        max_tokens: Per-sample generation budget. Either a single int applied
-            to every sample, or a sequence of length `len(prompt_token_ids_list)`
-            specifying a per-sample cap. For TP-BPOD the caller should pass
-            per-sample caps equal to `len(teacher_full_tokens) - Q_i`.
+        base_url: Server base URL, e.g. 'http://127.0.0.1:8000'.
+        prompt_token_ids_list: One list of token IDs per sample.
+        max_tokens: Single int or per-sample sequence.
         temperature, top_p: Sampling parameters.
         timeout: HTTP timeout per request.
         max_workers: Concurrent in-flight requests.
 
     Returns:
-        List of generated token-id sequences (one per input), in input order.
-        Each sequence contains only the new tokens — no echo of the prompt.
+        List of generated-token sequences (one per input). Empty for samples
+        whose request failed (caller decides; we raise if any failed).
 
     Raises:
-        RuntimeError: If any sample's response is missing the `token_ids` field
-            after vLLM said the request succeeded. (We set `return_token_ids=True`
-            in the payload, so a server that respects the request always returns
-            token_ids on a 2xx response; absence indicates a server version
-            mismatch.) Caller can catch and decide whether to skip the batch.
+        RuntimeError: If any sample's response is missing token IDs.
     """
     base_url = base_url.rstrip('/')
-    model = _resolve_model_name(base_url)
-    url = f'{base_url}/v1/completions'
+    url = f'{base_url}/infer/'
     batch_size = len(prompt_token_ids_list)
     if isinstance(max_tokens, int):
         per_sample_max = [max_tokens] * batch_size
@@ -82,34 +59,52 @@ def vllm_complete(
             raise ValueError(
                 f'max_tokens list length {len(per_sample_max)} != batch_size {batch_size}'
             )
+
     outputs: List[List[int]] = [[] for _ in range(batch_size)]
     errors: List[Optional[str]] = [None] * batch_size
 
     def _fetch_one(idx: int) -> None:
         if per_sample_max[idx] <= 0:
-            # Nothing to generate (suffix budget exhausted by teacher prefix).
             return
-        payload = {
-            'model': model,
-            'prompt': prompt_token_ids_list[idx],
+        # Carry prompt_token_ids via data_dict; the server-side
+        # rollout_with_prefill patch unpacks them and skips template.encode.
+        # We still send a dummy `messages` field because RolloutInferRequest
+        # requires it; the patched encoder ignores it.
+        infer_request = {
+            'messages': [{'role': 'user', 'content': ''}],
+            'data_dict': {'prompt_token_ids': prompt_token_ids_list[idx]},
+        }
+        request_config = {
             'max_tokens': per_sample_max[idx],
             'temperature': temperature,
             'top_p': top_p,
-            'echo': False,
-            'return_token_ids': True,
+            'return_details': True,
+        }
+        payload = {
+            'infer_requests': [infer_request],
+            'request_config': request_config,
         }
         try:
             resp = requests.post(url, json=payload, timeout=timeout)
             resp.raise_for_status()
-            choice = resp.json()['choices'][0]
-            token_ids = choice.get('token_ids')
-            if token_ids is None:
+            data = resp.json()
+            if not isinstance(data, list) or not data:
+                errors[idx] = f'unexpected response shape: {type(data).__name__}'
+                return
+            entry = data[0]
+            # Preferred: response_token_ids (top-level field on the entry)
+            tids = entry.get('response_token_ids')
+            if not tids:
+                # Fallback: choices[0].token_ids inside the response
+                choice = entry.get('response', {}).get('choices', [{}])[0]
+                tids = choice.get('token_ids')
+            if not tids:
                 errors[idx] = (
-                    f'choices[0].token_ids missing despite return_token_ids=True; '
-                    f'response keys={list(choice.keys())}'
+                    f'no token_ids in response; entry keys={list(entry.keys())}, '
+                    f"choice keys={list(entry.get('response', {}).get('choices', [{}])[0].keys())}"
                 )
                 return
-            outputs[idx] = list(token_ids)
+            outputs[idx] = list(tids)
         except Exception as e:
             errors[idx] = f'{type(e).__name__}: {e}'
 
@@ -121,6 +116,8 @@ def vllm_complete(
     if failed:
         msg = '; '.join(f'sample {i}: {errors[i]}' for i in failed[:5])
         more = f' (and {len(failed) - 5} more)' if len(failed) > 5 else ''
-        raise RuntimeError(f'vllm_complete: {len(failed)}/{batch_size} samples failed: {msg}{more}')
+        raise RuntimeError(
+            f'vllm_complete: {len(failed)}/{batch_size} samples failed: {msg}{more}'
+        )
 
     return outputs
