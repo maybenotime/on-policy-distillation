@@ -34,14 +34,23 @@ def _install_prompt_token_ids_patch() -> None:
         return_template_inputs: bool = False,
         return_length: bool = False,
     ) -> Dict[str, Any]:
-        # Debug stderr so we know the patch is on the inference path.
-        print('[PATCHED_ENCODE_CALLED] inputs_type=', type(inputs).__name__,
-              'has_data_dict=', hasattr(inputs, 'data_dict'),
-              flush=True, file=sys.stderr)
-        data_dict = getattr(inputs, 'data_dict', None)
+        # data_dict carrier may arrive on either a dataclass attribute
+        # (RolloutInferRequest) or a plain dict key (FastAPI passthrough).
+        data_dict: Optional[Dict[str, Any]] = None
+        if hasattr(inputs, 'data_dict'):
+            data_dict = getattr(inputs, 'data_dict', None)
+        elif isinstance(inputs, dict):
+            data_dict = inputs.get('data_dict')
+
         token_ids: Optional[list] = None
         if isinstance(data_dict, dict):
             token_ids = data_dict.get('prompt_token_ids')
+
+        # Debug stderr so we know the patch is on the inference path.
+        print('[PATCHED_ENCODE] type=', type(inputs).__name__,
+              'has_token_ids=', token_ids is not None,
+              'n_tokens=', len(token_ids) if token_ids else 0,
+              flush=True, file=sys.stderr)
 
         if token_ids:
             print('[PATCHED_ENCODE_HIT] using prompt_token_ids len=', len(token_ids),
