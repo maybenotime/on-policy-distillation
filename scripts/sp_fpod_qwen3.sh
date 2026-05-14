@@ -30,9 +30,6 @@ export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$HF_HOME/datasets}"
 
 mkdir -p "$HF_HOME" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$VLLM_CACHE_ROOT" "$TMPDIR"
 
-HF_TOKEN="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"
-huggingface-cli login --token $HF_TOKEN
-
 export WANDB_API_KEY="8b34bbf9238dfc1c55c378dc0dea31921d5f420b"
 export WANDB_PROJECT="${WANDB_PROJECT:-prefix_curriculum_opd}"
 
