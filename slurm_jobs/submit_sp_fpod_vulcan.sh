@@ -59,6 +59,16 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 # NCCL on Alliance Canada (InfiniBand). Auto-detect typically works.
 export NCCL_DEBUG=WARN
 export NCCL_ASYNC_ERROR_HANDLING=1
+# Vulcan bnxt_re (Broadcom RoCE) hits QP "catastrophic error" under heavy
+# NCCL load — fall back to TCP socket (cross-node speed loss but stable).
+export NCCL_IB_DISABLE=1
+export NCCL_NET=Socket
+# /scratch is on a network FS that doesn't reliably support fcntl.flock,
+# so HF datasets builder lock raises Errno 116 "Stale file handle" with
+# 8 ranks acquiring concurrently. Redirect HF dataset cache to per-node
+# /tmp (POSIX flock works).
+export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
+mkdir -p "$HF_DATASETS_CACHE"
 
 # Save the latest checkpoint path on exit (covers SIGTERM/timeout)
 save_checkpoint() {

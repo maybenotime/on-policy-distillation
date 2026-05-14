@@ -52,6 +52,10 @@ export NPROC_PER_NODE=4
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export NCCL_DEBUG=WARN
 export NCCL_ASYNC_ERROR_HANDLING=1
+export NCCL_IB_DISABLE=1
+export NCCL_NET=Socket
+export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
+mkdir -p "$HF_DATASETS_CACHE"
 
 save_checkpoint() {
     CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
