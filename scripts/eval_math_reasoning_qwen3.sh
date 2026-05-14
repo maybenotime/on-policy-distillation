@@ -41,7 +41,7 @@ EVAL_DATASETS="${EVAL_DATASETS:-gsm8k aime24 aime25 amc math_500}"
 EVAL_MAX_NEW_TOKENS="${EVAL_MAX_NEW_TOKENS:-4096}"
 
 CUDA_VISIBLE_DEVICES=0 \
-swift eval \
+python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
     --use_hf true \
     "${EVAL_ARGS[@]}" \
     --enable_thinking "$ENABLE_THINKING" \

@@ -11,7 +11,7 @@ cd /home/sya225/on-policy-distillation
 source test_env/bin/activate
 
 save_checkpoint() {
-    OUTPUT_BASE="/home/sya225/on-policy-distillation/output/student_Qwen2.5-0.5B-Instruct_teacher_Qwen2.5-3B-Instruct_data5000"
+    OUTPUT_BASE="/localscratch/sya225/output/student_Qwen2.5-0.5B-Instruct_teacher_Qwen2.5-3B-Instruct_data5000"
     CHECKPOINT=$(find "$OUTPUT_BASE" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
     if [ -n "$CHECKPOINT" ]; then
         echo "$CHECKPOINT" > "/home/sya225/on-policy-distillation/checkpoint_path_${SLURM_JOB_ID}.txt"

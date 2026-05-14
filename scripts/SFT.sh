@@ -32,7 +32,7 @@ swift sft \
   --attn_impl flash_attn \
   --padding_free True \
   --report_to wandb \
-  --output_dir "../output/student_${STUDENT_MODEL_TAG}_teacher_deepseek" \
+  --output_dir "/localscratch/sya225/output/student_${STUDENT_MODEL_TAG}_teacher_deepseek" \
   --save_strategy "epoch" \
   --save_total_limit "2" \
   --logging_steps "10" \

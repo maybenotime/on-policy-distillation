@@ -43,7 +43,7 @@ swift rlhf \
     --max_length 8192 \
     --max_completion_length 4096 \
     --report_to wandb \
-    --output_dir "../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}" \
+    --output_dir "/localscratch/sya225/output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}" \
     --warmup_ratio 0.05 \
     --save_only_model true \
     --dataloader_num_workers 16 \
@@ -58,7 +58,7 @@ swift rlhf \
     --vllm_server_host 127.0.0.1 \
     --vllm_server_port 8000
 
-OUTPUT_BASE="../output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}"
+OUTPUT_BASE="/localscratch/sya225/output/student_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_data${DATA_SIZE}"
 CHECKPOINT=$(find "$OUTPUT_BASE" -name "checkpoint-*" -type d | sort -V | tail -1)
 echo "$CHECKPOINT" > ../checkpoint_path_${SLURM_JOB_ID}.txt
 echo "Checkpoint saved: $CHECKPOINT"

@@ -31,8 +31,12 @@ else
     EVAL_ARGS="--model ${MODEL}"
 fi
 
+# Route through swift_eval_patched.py — needed on Vulcan where Squid blocks
+# modelscope.cn (evalscope's TaskConfig defaults to dataset_hub=MODELSCOPE,
+# and swift's --use_hf true does NOT propagate to evalscope). Patcher also
+# fixes the amc adapter's strict record['year'] access.
 CUDA_VISIBLE_DEVICES=0 \
-swift eval \
+python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
     --use_hf true \
     $EVAL_ARGS \
     --eval_backend Native \

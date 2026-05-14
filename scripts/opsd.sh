@@ -34,7 +34,7 @@ if [ "$OPSD_MODE" = "multi" ]; then
 else
     TEACHER_TAG="${OPSD_TEACHER_MODEL}"
 fi
-OUTPUT="output/opsd_${MODEL_TAG}_mode${OPSD_MODE}_teacher${TEACHER_TAG}"
+OUTPUT="/localscratch/sya225/output/opsd_${MODEL_TAG}_mode${OPSD_MODE}_teacher${TEACHER_TAG}"
 
 echo "OPSD_MODE          = $OPSD_MODE"
 echo "OPSD_TEACHER_MODEL = $OPSD_TEACHER_MODEL"
