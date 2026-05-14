@@ -58,7 +58,7 @@ swift rlhf \
     --num_train_epochs "$PREFIX_K" \
     --per_device_train_batch_size 1 \
     --learning_rate 1e-5 \
-    --gradient_accumulation_steps 4 \
+    --gradient_accumulation_steps 8 \
     --save_steps 1000 \
     --save_total_limit 2 \
     --logging_steps 1 \
@@ -76,9 +76,9 @@ swift rlhf \
     --padding_free False \
     --use_logits_to_keep false \
     --use_vllm true \
-    --vllm_mode server \
-    --vllm_server_host 127.0.0.1 \
-    --vllm_server_port 8000
+    --vllm_mode colocate \
+    --sleep_level 1 \
+    --vllm_gpu_memory_utilization 0.4
 
 CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d | sort -V | tail -1)
 echo "$CHECKPOINT" > ../checkpoint_path_${SLURM_JOB_ID:-local}.txt

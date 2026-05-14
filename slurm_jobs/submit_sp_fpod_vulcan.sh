@@ -18,7 +18,9 @@
 #   $1 = student model (default Qwen/Qwen2.5-0.5B-Instruct)
 #   $2 = teacher model (default Qwen/Qwen2.5-3B-Instruct)
 #   $3 = data size     (default 200, override for full runs)
-#   $4 = train GPUs    (default 3 — rest of node = GPU 0 for vLLM)
+#
+# Uses vLLM colocate mode: no separate rollout server, all 4 GPUs run training
+# with co-located vLLM. Effective batch = 1 × grad_accum_8 × 4 = 32.
 #
 # Curriculum env vars (forwarded to sp_fpod.sh):
 #   PREFIX_K           number of stages = num_train_epochs (default 5; override to 2 for smoke)
@@ -41,15 +43,6 @@ mkdir -p logs
 STUDENT_MODEL=${1:-"Qwen/Qwen2.5-0.5B-Instruct"}
 TEACHER_MODEL=${2:-"Qwen/Qwen2.5-3B-Instruct"}
 DATA_SIZE=${3:-200}
-TRAIN_GPUS=${4:-3}
-
-if [ "$TRAIN_GPUS" -eq 1 ]; then
-    TRAIN_CUDA="1"
-elif [ "$TRAIN_GPUS" -eq 2 ]; then
-    TRAIN_CUDA="1,2"
-else
-    TRAIN_CUDA="1,2,3"
-fi
 
 STUDENT_TAG=$(basename "$STUDENT_MODEL")
 TEACHER_TAG=$(basename "$TEACHER_MODEL")
@@ -80,22 +73,14 @@ trap save_checkpoint EXIT
 
 cd scripts
 
-# vLLM rollout server on GPU 0 (background)
-CUDA_VISIBLE_DEVICES=0 NPROC_PER_NODE=1 \
-    bash rollout.sh "$STUDENT_MODEL" &
-ROLLOUT_PID=$!
+# Colocate mode: no separate rollout server — vLLM lives in the trainer process.
+# All 4 L40S GPUs run training + colocated vLLM rollout.
+echo "Start SP-FPOD (colocate): student=$STUDENT_MODEL teacher=$TEACHER_MODEL data=$DATA_SIZE K=$PREFIX_K"
 
-sleep 30
-
-echo "Start SP-FPOD: student=$STUDENT_MODEL teacher=$TEACHER_MODEL data=$DATA_SIZE K=$PREFIX_K"
-
-CUDA_VISIBLE_DEVICES=$TRAIN_CUDA NPROC_PER_NODE=$TRAIN_GPUS \
+CUDA_VISIBLE_DEVICES=0,1,2,3 NPROC_PER_NODE=4 \
     bash sp_fpod.sh \
         "$STUDENT_MODEL" \
         "$TEACHER_MODEL" \
         "$DATA_SIZE"
 
 echo "Training finished"
-
-kill $ROLLOUT_PID
-wait $ROLLOUT_PID 2>/dev/null
