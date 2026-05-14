@@ -51,8 +51,8 @@ swift rlhf \
     --per_device_train_batch_size 1 \
     --learning_rate 1e-5 \
     --gradient_accumulation_steps 4 \
-    --save_steps 1000 \
-    --save_total_limit 2 \
+    --save_strategy epoch \
+    --save_total_limit 6 \
     --logging_steps 1 \
     --max_length 8192 \
     --max_completion_length 4096 \
