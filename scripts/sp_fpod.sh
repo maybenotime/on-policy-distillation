@@ -42,6 +42,7 @@ OUTPUT_DIR="${OUTPUT_BASE_DIR}/sp_fpod_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MO
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
     --rlhf_type gkd \
+    --gkd_logits_topk 16 \
     --use_hf true \
     --model "$STUDENT_MODEL" \
     --teacher_model "$TEACHER_MODEL" \
