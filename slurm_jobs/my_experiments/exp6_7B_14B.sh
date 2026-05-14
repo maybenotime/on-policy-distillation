@@ -40,7 +40,7 @@ CUDA_VISIBLE_DEVICES=1,2,3 NPROC_PER_NODE=3 bash on-policy-distill.sh \
 	Qwen/Qwen2.5-14B-Instruct \
 	5000 \
 	../data/prompts_math_swift.jsonl \
-	zero3
+	zero3_offload
 echo "Training finished"
 
 kill $ROLLOUT_PID
