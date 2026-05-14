@@ -15,12 +15,13 @@ set -e
 RUN_DIR="${1:?Usage: $0 <run_output_dir> <teacher_model> [pinned_jsonl]}"
 TEACHER_MODEL="${2:?missing teacher_model}"
 PINNED_JSONL="${3:-data/pinned_eval_64.jsonl}"
+ENABLE_THINKING="${ENABLE_THINKING:-none}"
 
 RUN_TAG=$(basename "$RUN_DIR")
 OUT_BASE="results/pinned_curves/${RUN_TAG}"
 mkdir -p "$OUT_BASE"
 
-echo "[pinned_eval] run_dir=$RUN_DIR  teacher=$TEACHER_MODEL  pinned=$PINNED_JSONL"
+echo "[pinned_eval] run_dir=$RUN_DIR  teacher=$TEACHER_MODEL  pinned=$PINNED_JSONL  enable_thinking=$ENABLE_THINKING"
 
 for CKPT in $(find "$RUN_DIR" -maxdepth 2 -type d -name "checkpoint-*" | sort -V); do
     CKPT_NAME=$(basename "$CKPT")
@@ -37,6 +38,7 @@ for CKPT in $(find "$RUN_DIR" -maxdepth 2 -type d -name "checkpoint-*" | sort -V
         --output_path "$OUT" \
         --num_rollouts 4 \
         --num_sample_positions 10 \
+        --enable_thinking "$ENABLE_THINKING" \
         --use_vllm
 done
 
