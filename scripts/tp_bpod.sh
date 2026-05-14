@@ -92,7 +92,7 @@ swift rlhf \
     --use_vllm true \
     --vllm_mode colocate \
     --sleep_level 1 \
-    --vllm_gpu_memory_utilization 0.3 \
+    --vllm_gpu_memory_utilization 0.4 \
     --teacher_deepspeed zero3 \
     --remove_unused_columns false
 
