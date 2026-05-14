@@ -13,10 +13,10 @@ STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
 export PREFIX_DIRECTION="${PREFIX_DIRECTION:-forward}"
-export PREFIX_K="${PREFIX_K:-5}"
-export PREFIX_DELTA="${PREFIX_DELTA:-0.2}"
-export PREFIX_P0="${PREFIX_P0:-0.2}"
-export PREFIX_Q0="${PREFIX_Q0:-0.8}"
+export PREFIX_K="${PREFIX_K:-10}"
+export PREFIX_DELTA="${PREFIX_DELTA:-0.1}"
+export PREFIX_P0="${PREFIX_P0:-0.1}"
+export PREFIX_Q0="${PREFIX_Q0:-0.9}"
 
 CACHE_BASE="${CACHE_BASE:-/home/sya225/.cache}"
 OUTPUT_BASE_DIR="${OUTPUT_BASE_DIR:-/localscratch/sya225/output}"
@@ -52,12 +52,13 @@ swift rlhf \
     --lmbda 1 \
     --beta 1 \
     --torch_dtype bfloat16 \
-    --num_train_epochs "$PREFIX_K" \
+    --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --learning_rate 1e-5 \
     --gradient_accumulation_steps 4 \
-    --save_strategy epoch \
-    --save_total_limit 6 \
+    --save_strategy steps \
+    --save_steps 0.1 \
+    --save_total_limit 11 \
     --logging_steps 1 \
     --max_length 8192 \
     --max_completion_length 4096 \

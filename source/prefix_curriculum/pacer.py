@@ -3,8 +3,15 @@
 SP-FPOD (forward): ratio = p, starts at p0 and advances toward 1.0 each stage.
 TP-BPOD (backward): ratio = q, starts at q0 and decreases toward 0.0 each stage.
 
-One stage = one epoch over the fixed query set. The ratio is constant within
-a stage and advances via `advance()` (called from `on_epoch_end`).
+Stages are evenly spaced along the *total training steps* (not epochs). Stage k
+covers the step range `[k * max_steps / K, (k+1) * max_steps / K)`. The
+PrefixPacerCallback updates `self.stage` on each `on_step_begin` based on the
+trainer's `state.global_step` / `state.max_steps`. The ratio is constant
+within a stage.
+
+This decouples curriculum length from epoch count — a 1-epoch run can still
+sweep all K stages, which matters on time-limited clusters where multi-epoch
+runs won't finish.
 """
 
 from __future__ import annotations
@@ -30,6 +37,13 @@ class PrefixPacer:
             return min(1.0, self.ratio_0 + self.delta * self.stage)
         return max(0.0, self.ratio_0 - self.delta * self.stage)
 
+    def stage_for_step(self, global_step: int, max_steps: int) -> int:
+        """Return the stage index for a given training step (step-based curriculum)."""
+        if max_steps <= 0:
+            return 0
+        s = int(global_step * self.num_stages / max_steps)
+        return max(0, min(s, self.num_stages - 1))
+
     def advance(self) -> None:
         if self.stage < self.num_stages - 1:
             self.stage += 1
@@ -44,16 +58,16 @@ class PrefixPacer:
         """Build a pacer from PREFIX_* environment variables.
 
         PREFIX_DIRECTION : 'forward' (default) or 'backward'
-        PREFIX_K         : number of stages, default 5
-        PREFIX_DELTA     : per-stage increment magnitude, default 0.2
-        PREFIX_P0        : forward starting ratio, default 0.2
-        PREFIX_Q0        : backward starting ratio, default 0.8
+        PREFIX_K         : number of stages, default 10
+        PREFIX_DELTA     : per-stage increment magnitude, default 0.1
+        PREFIX_P0        : forward starting ratio, default 0.1
+        PREFIX_Q0        : backward starting ratio, default 0.9
         """
         direction = os.environ.get('PREFIX_DIRECTION', 'forward').strip().lower()
-        num_stages = int(os.environ.get('PREFIX_K', '5'))
-        delta = float(os.environ.get('PREFIX_DELTA', '0.2'))
+        num_stages = int(os.environ.get('PREFIX_K', '10'))
+        delta = float(os.environ.get('PREFIX_DELTA', '0.1'))
         if direction == 'forward':
-            ratio_0 = float(os.environ.get('PREFIX_P0', '0.2'))
+            ratio_0 = float(os.environ.get('PREFIX_P0', '0.1'))
         else:
-            ratio_0 = float(os.environ.get('PREFIX_Q0', '0.8'))
+            ratio_0 = float(os.environ.get('PREFIX_Q0', '0.9'))
         return cls(direction, ratio_0, delta, num_stages)

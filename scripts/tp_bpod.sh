@@ -2,9 +2,9 @@
 #
 # Curriculum controlled by PREFIX_* env vars (read at trainer __init__):
 #   PREFIX_DIRECTION   forward | backward (default: forward; set to backward for TP-BPOD)
-#   PREFIX_K           number of stages, default 5
-#   PREFIX_DELTA       per-stage delta, default 0.2
-#   PREFIX_Q0          backward starting ratio, default 0.8 (→ stages 0.8, 0.6, 0.4, 0.2, 0.0)
+#   PREFIX_K           number of stages, default 10 (step-based within 1 epoch)
+#   PREFIX_DELTA       per-stage delta, default 0.1
+#   PREFIX_Q0          backward starting ratio, default 0.9 (→ stages 0.9, 0.8, ..., 0.0)
 #
 # Data plugin env vars (read at module import):
 #   PREFIX_TEACHER         teacher column to use, default Qwen2.5-14B-Instruct
@@ -25,9 +25,9 @@ STUDENT_MODEL_TAG="${STUDENT_MODEL##*/}"
 TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 
 export PREFIX_DIRECTION="${PREFIX_DIRECTION:-backward}"
-export PREFIX_K="${PREFIX_K:-5}"
-export PREFIX_DELTA="${PREFIX_DELTA:-0.2}"
-export PREFIX_Q0="${PREFIX_Q0:-0.8}"
+export PREFIX_K="${PREFIX_K:-10}"
+export PREFIX_DELTA="${PREFIX_DELTA:-0.1}"
+export PREFIX_Q0="${PREFIX_Q0:-0.9}"
 # PREFIX_TEACHER defaults to the basename of TEACHER_MODEL so the cache column
 # used for the teacher prefix matches the teacher actually used for the reverse-KL
 # loss. Override only if you intentionally want a different prefix source.
@@ -69,12 +69,13 @@ swift rlhf \
     --lmbda 1 \
     --beta 1 \
     --torch_dtype bfloat16 \
-    --num_train_epochs "$PREFIX_K" \
+    --num_train_epochs 1 \
     --per_device_train_batch_size 2 \
     --learning_rate 1e-5 \
     --gradient_accumulation_steps 2 \
-    --save_strategy epoch \
-    --save_total_limit 6 \
+    --save_strategy steps \
+    --save_steps 0.1 \
+    --save_total_limit 11 \
     --logging_steps 1 \
     --max_length 8192 \
     --max_completion_length 4096 \
