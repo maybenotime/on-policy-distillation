@@ -83,18 +83,40 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
         q = self.prefix_pacer.current_ratio()
         prompt_with_prefix_ids: List[List[int]] = []
         prompt_plus_prefix_lengths: List[int] = []
+        _dbg_prompt_lens: List[int] = []
+        _dbg_prefix_lens: List[int] = []
+        _dbg_teacher_full_lens: List[int] = []
+        _dbg_has_field: List[bool] = []
         for i, item in enumerate(inputs):
             row_attn = encoded_inputs['attention_mask'][i].bool()
             prompt_ids = encoded_inputs['input_ids'][i][row_attn].tolist()
-            if q > 0.0 and 'teacher_full_token_ids' in item:
+            has_field = 'teacher_full_token_ids' in item
+            if q > 0.0 and has_field:
                 full = list(item['teacher_full_token_ids'])
                 Q_i = max(_RESPONSE_MIN_LEN, int(q * len(full)))
                 Q_i = min(Q_i, len(full))
                 prefix_ids = full[:Q_i]
+                _dbg_teacher_full_lens.append(len(full))
             else:
                 prefix_ids = []
+                _dbg_teacher_full_lens.append(0)
+            _dbg_has_field.append(has_field)
+            _dbg_prompt_lens.append(len(prompt_ids))
+            _dbg_prefix_lens.append(len(prefix_ids))
             prompt_with_prefix_ids.append(prompt_ids + prefix_ids)
             prompt_plus_prefix_lengths.append(len(prompt_ids) + len(prefix_ids))
+
+        import sys as _sys
+        print(
+            f'[TP_BPOD_INPUTS step={self.state.global_step} q={q:.2f}] '
+            f'batch_size={len(inputs)} '
+            f'item0_keys={list(inputs[0].keys()) if inputs else None} '
+            f'has_teacher_field={_dbg_has_field} '
+            f'teacher_full_lens={_dbg_teacher_full_lens} '
+            f'prompt_lens={_dbg_prompt_lens} '
+            f'prefix_lens={_dbg_prefix_lens}',
+            flush=True, file=_sys.stderr,
+        )
 
         # 3. Call vLLM engine directly with RolloutInferRequest+data_dict carrier.
         #    Wrap with the same wake/sleep + weight-sync state management that
