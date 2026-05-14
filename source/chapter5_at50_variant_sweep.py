@@ -357,10 +357,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompts", type=Path, required=True)
     parser.add_argument("--answers", type=Path, required=True)
-    parser.add_argument("--draft", type=Path, required=True, help="Existing AT-50 first5k draft data")
+    parser.add_argument("--draft", type=Path, required=True, help="Existing AT first5k draft data")
     parser.add_argument("--output_dir", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=500)
     parser.add_argument("--ratio", type=float, default=0.5)
+    parser.add_argument("--ratio_label", type=str, default=None, help="Label used in output filenames, e.g. 30/50/70")
     parser.add_argument("--student", type=str, default="Qwen/Qwen2.5-0.5B-Instruct")
     parser.add_argument("--teacher", type=str, default="Qwen/Qwen2.5-14B-Instruct")
     parser.add_argument("--student_max_tokens", type=int, default=512)
@@ -375,11 +376,13 @@ def main() -> None:
         choices=["prompt_enhanced", "postprocess_only", "teacher_repair"],
     )
     args = parser.parse_args()
+    if args.ratio_label is None:
+        args.ratio_label = str(int(round(args.ratio * 100)))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     pairs = load_problem_answer_pairs(args.prompts, args.answers, args.limit)
     drafts = load_drafts(args.draft, pairs)
-    print(f"Loaded {len(pairs)} aligned AT-50 samples.")
+    print(f"Loaded {len(pairs)} aligned AT-{args.ratio_label} samples.")
 
     outputs: dict[str, list[dict]] = {}
     if "prompt_enhanced" in args.variants:
@@ -394,7 +397,7 @@ def main() -> None:
 
     summaries = []
     for name, records in outputs.items():
-        output_path = args.output_dir / f"at50_{name}_{args.limit}.jsonl"
+        output_path = args.output_dir / f"at{args.ratio_label}_{name}_{args.limit}.jsonl"
         save_records(output_path, records)
         summaries.append(summarize_records(name, records, pairs))
         print(f"Saved {name}: {output_path}")
