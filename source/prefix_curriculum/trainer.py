@@ -9,9 +9,10 @@ already ignores (see `mask = labels != -100` in
 TP-BPOD (backward): inject a teacher prefix into the rollout so the student
 generates conditioned on it. The full sequence becomes
 `[prompt, teacher_prefix, student_suffix]`; labels mark everything but the
-student suffix as -100. The student is queried via vLLM's `/v1/completions`
-endpoint with `prompt = chat_template_prompt_ids + teacher_prefix_ids` so the
-on-policy property holds.
+student suffix as -100. Requires `--vllm_mode colocate`: the trainer calls
+`self.engine.infer` directly with a `RolloutInferRequest` whose `data_dict`
+carries `prompt_token_ids`; the plugin's Template.encode patch unpacks it
+and skips chat-template encoding. vLLM then continues from those raw tokens.
 """
 
 from __future__ import annotations
@@ -21,12 +22,10 @@ from typing import List, Tuple
 
 import torch
 from swift.rlhf_trainers.gkd_trainer import DataSource, GKDTrainer
-from swift.utils import to_device
 from trl import SFTTrainer as HFSFTTrainer
 
 from .callback import PrefixPacerCallback
 from .pacer import PrefixPacer
-from .vllm_client import vllm_complete
 
 logger = logging.getLogger(__name__)
 
@@ -67,20 +66,20 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
         return super().training_step(model, inputs, num_items_in_batch)
 
     def _tp_bpod_training_step(self, model, inputs, num_items_in_batch):
-        # 1. Sync student weights to vLLM if global step has advanced.
-        #    Replicates rollout_mixin.py:920-922.
-        if self.state.global_step != self._last_loaded_step:
-            self._move_model_to_vllm()
-            self._last_loaded_step = self.state.global_step
+        # Colocate-only: requires vLLM engine in the same process so the
+        # plugin's Template.encode patch is in scope.
+        if getattr(self, 'vllm_mode', None) != 'colocate':
+            raise RuntimeError(
+                'TP-BPOD requires --vllm_mode colocate (got %r). '
+                'Server-mode rollout spawns separate worker processes that do '
+                'not inherit our Template.encode monkey-patch.'
+                % getattr(self, 'vllm_mode', None)
+            )
 
-        # 2. Encode prompts only (no teacher prefix, no response yet).
+        # 1. Encode prompts only.
         encoded_inputs = self._prepare_batch_inputs(inputs, encode_prompt_only=True)
 
-        # 3. For each sample, build `prompt_ids + teacher_prefix_ids[:Q_i]`.
-        #    Student generates up to `max_completion_length` tokens; EOS stops
-        #    it naturally. We do NOT cap the student to the teacher's remaining
-        #    length — the student is allowed to write a longer/shorter suffix
-        #    than the teacher would have, that's the on-policy property.
+        # 2. For each sample, build `prompt_ids + teacher_prefix_ids[:Q_i]`.
         q = self.prefix_pacer.current_ratio()
         prompt_with_prefix_ids: List[List[int]] = []
         prompt_plus_prefix_lengths: List[int] = []
@@ -97,15 +96,33 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
             prompt_with_prefix_ids.append(prompt_ids + prefix_ids)
             prompt_plus_prefix_lengths.append(len(prompt_ids) + len(prefix_ids))
 
-        # 4. Generate student suffix via vLLM /v1/completions.
+        # 3. Call vLLM engine directly with RolloutInferRequest+data_dict carrier.
+        from swift.infer_engine import RolloutInferRequest
+        from swift.llm import RequestConfig
         gen_cfg = self.generation_config
-        suffix_token_ids_list = vllm_complete(
-            base_url=f'http://{self.args.vllm_server_host}:{self.args.vllm_server_port}',
-            prompt_token_ids_list=prompt_with_prefix_ids,
+        infer_requests = [
+            RolloutInferRequest(
+                messages=[{'role': 'user', 'content': ''}],
+                data_dict={'prompt_token_ids': ids},
+            )
+            for ids in prompt_with_prefix_ids
+        ]
+        request_config = RequestConfig(
             max_tokens=int(self.args.max_completion_length),
             temperature=getattr(gen_cfg, 'temperature', 1.0),
             top_p=getattr(gen_cfg, 'top_p', 1.0),
+            return_details=True,
         )
+        rollout_outputs = self.engine.infer(infer_requests, request_config, use_tqdm=False)
+
+        # 4. Parse generated token IDs (suffix only — vLLM does not echo prompt).
+        suffix_token_ids_list: List[List[int]] = []
+        for output in rollout_outputs:
+            choice = output.choices[0] if hasattr(output, 'choices') else output['choices'][0]
+            tids = getattr(choice, 'token_ids', None)
+            if tids is None and isinstance(choice, dict):
+                tids = choice.get('token_ids')
+            suffix_token_ids_list.append(list(tids) if tids else [])
 
         # 5. Assemble [prompt + prefix + suffix] with correct labels mask.
         new_input_ids, new_attn, new_labels = _assemble_tp_bpod_batch(
