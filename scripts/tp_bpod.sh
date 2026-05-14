@@ -70,9 +70,9 @@ swift rlhf \
     --beta 1 \
     --torch_dtype bfloat16 \
     --num_train_epochs "$PREFIX_K" \
-    --per_device_train_batch_size 1 \
+    --per_device_train_batch_size 2 \
     --learning_rate 1e-5 \
-    --gradient_accumulation_steps 8 \
+    --gradient_accumulation_steps 4 \
     --save_steps 1000 \
     --save_total_limit 2 \
     --logging_steps 1 \
@@ -92,7 +92,8 @@ swift rlhf \
     --use_vllm true \
     --vllm_mode colocate \
     --sleep_level 1 \
-    --vllm_gpu_memory_utilization 0.25 \
+    --vllm_gpu_memory_utilization 0.3 \
+    --teacher_deepspeed zero3 \
     --remove_unused_columns false
 
 CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d | sort -V | tail -1)
