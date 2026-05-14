@@ -28,7 +28,10 @@ export PREFIX_DIRECTION="${PREFIX_DIRECTION:-backward}"
 export PREFIX_K="${PREFIX_K:-5}"
 export PREFIX_DELTA="${PREFIX_DELTA:-0.2}"
 export PREFIX_Q0="${PREFIX_Q0:-0.8}"
-export PREFIX_TEACHER="${PREFIX_TEACHER:-Qwen2.5-14B-Instruct}"
+# PREFIX_TEACHER defaults to the basename of TEACHER_MODEL so the cache column
+# used for the teacher prefix matches the teacher actually used for the reverse-KL
+# loss. Override only if you intentionally want a different prefix source.
+export PREFIX_TEACHER="${PREFIX_TEACHER:-$TEACHER_MODEL_TAG}"
 export PREFIX_FILTER_CORRECT="${PREFIX_FILTER_CORRECT:-1}"
 export PREFIX_FILTER_COMPLETE="${PREFIX_FILTER_COMPLETE:-1}"
 export PREFIX_STUDENT_MODEL="${PREFIX_STUDENT_MODEL:-$STUDENT_MODEL}"
