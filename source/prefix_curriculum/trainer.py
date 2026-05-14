@@ -143,6 +143,26 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
                 self.engine.engine.wake_up(tags=['kv_cache'])
 
             rollout_outputs = self.engine.infer(infer_requests, request_config, use_tqdm=False)
+            import sys as _sys
+            try:
+                _r0 = rollout_outputs[0]
+                _resp0 = getattr(_r0, 'response', None) or _r0
+                _ch0 = _resp0.choices[0]
+                _ptids = getattr(_resp0, 'prompt_token_ids', None) or []
+                _tids = getattr(_ch0, 'token_ids', None) or []
+                _content = getattr(getattr(_ch0, 'message', None), 'content', '') or ''
+                print(
+                    f'[TP_BPOD step={self.state.global_step} q={q:.2f}] '
+                    f'sent_prompt_token_ids[0]_len={len(prompt_with_prefix_ids[0])} '
+                    f'resp.prompt_token_ids_len={len(_ptids)} '
+                    f'resp.choices[0].token_ids_len={len(_tids)} '
+                    f'first_5_suffix={_tids[:5]} '
+                    f'content_first_120={_content[:120]!r}',
+                    flush=True, file=_sys.stderr,
+                )
+            except Exception as _e:
+                print(f'[TP_BPOD step={self.state.global_step}] debug-log failed: {_e}',
+                      flush=True, file=_sys.stderr)
 
             if getattr(args, 'sleep_level', 0) > 0:
                 self.engine.engine.reset_prefix_cache()

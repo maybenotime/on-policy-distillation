@@ -84,6 +84,9 @@ def _install_prompt_token_ids_patch() -> None:
             token_ids = data_dict.get('prompt_token_ids')
 
         if token_ids:
+            import sys as _sys
+            print(f'[PATCHED_ENCODE_HIT] short-circuit on prompt_token_ids len={len(token_ids)}',
+                  flush=True, file=_sys.stderr)
             ids = list(token_ids)
             encoded: Dict[str, Any] = {
                 'input_ids': ids,
