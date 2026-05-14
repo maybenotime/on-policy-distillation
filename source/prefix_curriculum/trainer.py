@@ -97,7 +97,14 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
             prompt_plus_prefix_lengths.append(len(prompt_ids) + len(prefix_ids))
 
         # 3. Call vLLM engine directly with RolloutInferRequest+data_dict carrier.
+        #    Wrap with the same wake/sleep + weight-sync state management that
+        #    `RolloutTrainerMixin._fast_infer` uses (rollout_mixin.py:908-956).
+        import inspect
+        from contextlib import nullcontext
         from swift.infer_engine.protocol import RolloutInferRequest, RequestConfig
+        from swift.utils.torch_utils import aggressive_empty_cache, set_expandable_segments
+
+        args = self.args
         gen_cfg = self.generation_config
         infer_requests = [
             RolloutInferRequest(
@@ -112,7 +119,36 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
             top_p=getattr(gen_cfg, 'top_p', 1.0),
             return_details=True,
         )
-        rollout_outputs = self.engine.infer(infer_requests, request_config, use_tqdm=False)
+
+        # Wake up weights if sleeping (sleep_level > 0).
+        if getattr(args, 'sleep_level', 0) > 0 and self.engine.inner_model_executor.is_sleeping:
+            wake_up_params = inspect.signature(self.engine.engine.wake_up).parameters
+            wake_kwargs = {'tags': ['weights']} if 'tags' in wake_up_params else {}
+            aggressive_empty_cache()
+            self.engine.engine.wake_up(**wake_kwargs)
+
+        # Sync training weights to vLLM if step advanced.
+        if self.state.global_step != self._last_loaded_step or getattr(args, 'sleep_level', 0) == 2:
+            self._move_model_to_vllm()
+            self._last_loaded_step = self.state.global_step
+
+        offload_ctx = self.offload_context if getattr(self, 'enable_offload', False) else nullcontext
+        with offload_ctx():
+            # Wake KV cache if still sleeping.
+            if (getattr(args, 'sleep_level', 0) > 0
+                    and self.engine.inner_model_executor.is_sleeping
+                    and 'tags' in inspect.signature(self.engine.engine.wake_up).parameters):
+                aggressive_empty_cache()
+                set_expandable_segments(False)
+                self.engine.engine.wake_up(tags=['kv_cache'])
+
+            rollout_outputs = self.engine.infer(infer_requests, request_config, use_tqdm=False)
+
+            if getattr(args, 'sleep_level', 0) > 0:
+                self.engine.engine.reset_prefix_cache()
+                self.engine.engine.sleep(level=args.sleep_level)
+                aggressive_empty_cache()
+                set_expandable_segments(True)
 
         # 4. Parse generated token IDs (suffix only — vLLM does not echo prompt).
         suffix_token_ids_list: List[List[int]] = []
