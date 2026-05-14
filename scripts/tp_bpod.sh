@@ -88,7 +88,8 @@ swift rlhf \
     --use_logits_to_keep false \
     --use_vllm true \
     --vllm_mode colocate \
-    --sleep_level 1
+    --sleep_level 1 \
+    --vllm_gpu_memory_utilization 0.5
 
 CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d | sort -V | tail -1)
 echo "$CHECKPOINT" > ../checkpoint_path_${SLURM_JOB_ID:-local}.txt
