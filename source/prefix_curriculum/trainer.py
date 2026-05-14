@@ -97,8 +97,7 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
             prompt_plus_prefix_lengths.append(len(prompt_ids) + len(prefix_ids))
 
         # 3. Call vLLM engine directly with RolloutInferRequest+data_dict carrier.
-        from swift.infer_engine import RolloutInferRequest
-        from swift.llm import RequestConfig
+        from swift.infer_engine.protocol import RolloutInferRequest, RequestConfig
         gen_cfg = self.generation_config
         infer_requests = [
             RolloutInferRequest(
