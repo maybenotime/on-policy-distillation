@@ -92,8 +92,7 @@ swift rlhf \
     --use_vllm true \
     --vllm_mode colocate \
     --sleep_level 1 \
-    --vllm_gpu_memory_utilization 0.3 \
-    --teacher_deepspeed zero3 \
+    --vllm_gpu_memory_utilization 0.25 \
     --remove_unused_columns false
 
 CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d | sort -V | tail -1)
