@@ -70,9 +70,9 @@ swift rlhf \
     --beta 1 \
     --torch_dtype bfloat16 \
     --num_train_epochs "$PREFIX_K" \
-    --per_device_train_batch_size 1 \
+    --per_device_train_batch_size 2 \
     --learning_rate 1e-5 \
-    --gradient_accumulation_steps 8 \
+    --gradient_accumulation_steps 2 \
     --save_steps 1000 \
     --save_total_limit 2 \
     --logging_steps 1 \
