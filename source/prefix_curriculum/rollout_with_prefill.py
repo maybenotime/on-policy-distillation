@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def _install_prompt_token_ids_patch() -> None:
+    import sys
     from swift.template.base import Template
     from swift.template.template_inputs import TemplateInputs
 
@@ -33,12 +34,18 @@ def _install_prompt_token_ids_patch() -> None:
         return_template_inputs: bool = False,
         return_length: bool = False,
     ) -> Dict[str, Any]:
+        # Debug stderr so we know the patch is on the inference path.
+        print('[PATCHED_ENCODE_CALLED] inputs_type=', type(inputs).__name__,
+              'has_data_dict=', hasattr(inputs, 'data_dict'),
+              flush=True, file=sys.stderr)
         data_dict = getattr(inputs, 'data_dict', None)
         token_ids: Optional[list] = None
         if isinstance(data_dict, dict):
             token_ids = data_dict.get('prompt_token_ids')
 
         if token_ids:
+            print('[PATCHED_ENCODE_HIT] using prompt_token_ids len=', len(token_ids),
+                  flush=True, file=sys.stderr)
             ids = list(token_ids)
             encoded: Dict[str, Any] = {
                 'input_ids': ids,
@@ -61,9 +68,8 @@ def _install_prompt_token_ids_patch() -> None:
         )
 
     Template.encode = _patched_encode
-    logger.info(
-        '[rollout_with_prefill] patched Template.encode to honor data_dict.prompt_token_ids'
-    )
+    print('[rollout_with_prefill] patched Template.encode (id=', id(Template), ')',
+          flush=True, file=sys.stderr)
 
 
 def main() -> None:
