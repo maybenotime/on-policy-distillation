@@ -23,7 +23,18 @@ mkdir -p "$OUT_BASE"
 
 echo "[pinned_eval] run_dir=$RUN_DIR  teacher=$TEACHER_MODEL  pinned=$PINNED_JSONL  enable_thinking=$ENABLE_THINKING"
 
-for CKPT in $(find "$RUN_DIR" -maxdepth 2 -type d -name "checkpoint-*" | sort -V); do
+# Cap to 5 evaluations per run (1 per K=5 curriculum stage), every-other
+# checkpoint starting from index 1. With save_steps=0.1 on a 279-step epoch
+# the 10 saved ckpts are at steps 28,56,84,112,140,168,196,224,252,279; this
+# picks 56,112,168,224,279 — exactly the K=5 stage boundaries.
+mapfile -t ALL_CKPTS < <(find "$RUN_DIR" -maxdepth 2 -type d -name "checkpoint-*" | sort -V)
+SELECTED=()
+for i in 1 3 5 7 9; do
+    [ -n "${ALL_CKPTS[$i]:-}" ] && SELECTED+=("${ALL_CKPTS[$i]}")
+done
+echo "[pinned_eval] selected ${#SELECTED[@]}/${#ALL_CKPTS[@]} ckpts: $(printf '%s ' "${SELECTED[@]##*/}")"
+
+for CKPT in "${SELECTED[@]}"; do
     CKPT_NAME=$(basename "$CKPT")
     OUT="${OUT_BASE}/${CKPT_NAME}.pkl"
     if [ -f "$OUT" ]; then
