@@ -44,7 +44,12 @@ for CKPT in $(find "$RUN_DIR" -maxdepth 2 -type d -name "checkpoint-*" | sort -V
         --num_sample_positions 10
         --enable_thinking "$ENABLE_THINKING"
         --use_vllm
-        --vllm_gpu_memory_utilization 0.3
+        # vllm_util only affects Phase 3 (vLLM teacher for completion accuracy).
+        # 14B teacher in bf16 is ~28 GB, so vLLM needs at least ~0.7 of 48 GB
+        # to fit model + KV cache. Phase 1/1b/2 don't touch vLLM (HF .generate
+        # + HF forward); they're fine because the student subprocess exits
+        # before Phase 2/3 starts (fresh GPU in the teacher subprocess).
+        --vllm_gpu_memory_utilization 0.85
         # batch_size=1 keeps Phase 1b logits tensor at [1, seq, vocab] × bf16
         # ~2.5 GiB (vs ~10 GiB at batch=4) on Qwen2.5 vocab=152K. Phase 2
         # teacher forward pass also benefits.
