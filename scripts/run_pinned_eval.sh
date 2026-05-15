@@ -45,6 +45,13 @@ for CKPT in $(find "$RUN_DIR" -maxdepth 2 -type d -name "checkpoint-*" | sort -V
         --enable_thinking "$ENABLE_THINKING"
         --use_vllm
         --vllm_gpu_memory_utilization 0.3
+        # batch_size=1 keeps Phase 1b logits tensor at [1, seq, vocab] × bf16
+        # ~2.5 GiB (vs ~10 GiB at batch=4) on Qwen2.5 vocab=152K. Phase 2
+        # teacher forward pass also benefits.
+        --batch_size 1
+        # cap completion length to control .generate() KV-cache footprint;
+        # math reasoning rarely needs >2K tokens.
+        --max_new_tokens 2048
     )
     python source/ood_analysis.py "${common_args[@]}" --phase student
     python source/ood_analysis.py "${common_args[@]}" --phase teacher
