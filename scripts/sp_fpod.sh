@@ -66,7 +66,7 @@ swift rlhf \
     --report_to wandb \
     --output_dir "$OUTPUT_DIR" \
     --warmup_ratio 0.05 \
-    --save_only_model true \
+    --save_only_model false \
     --dataloader_num_workers 16 \
     --dataset_num_proc 4 \
     --deepspeed zero2 \
