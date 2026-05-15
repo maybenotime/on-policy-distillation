@@ -31,16 +31,24 @@ for CKPT in $(find "$RUN_DIR" -maxdepth 2 -type d -name "checkpoint-*" | sort -V
         continue
     fi
     echo "[pinned_eval] evaluating $CKPT_NAME -> $OUT"
-    python source/ood_analysis.py \
-        --student_model "$CKPT" \
-        --teacher_model "$TEACHER_MODEL" \
-        --prompts_file "$PINNED_JSONL" \
-        --output_path "$OUT" \
-        --num_rollouts 4 \
-        --num_sample_positions 10 \
-        --enable_thinking "$ENABLE_THINKING" \
-        --use_vllm \
+    # Two-process split: student phase (Phase 1+1b) exits, releasing all GPU
+    # memory before the teacher phase (Phase 2+3) loads the 14B teacher.
+    # Without this split the HF student forward pass + leftover Python state
+    # consumes ~30 GB on a single L40S, leaving no room for the teacher.
+    common_args=(
+        --student_model "$CKPT"
+        --teacher_model "$TEACHER_MODEL"
+        --prompts_file "$PINNED_JSONL"
+        --output_path "$OUT"
+        --num_rollouts 4
+        --num_sample_positions 10
+        --enable_thinking "$ENABLE_THINKING"
+        --use_vllm
         --vllm_gpu_memory_utilization 0.3
+    )
+    python source/ood_analysis.py "${common_args[@]}" --phase student
+    python source/ood_analysis.py "${common_args[@]}" --phase teacher
+    rm -f "${OUT}.student.pkl"
 done
 
 echo "[pinned_eval] done. Outputs in $OUT_BASE"

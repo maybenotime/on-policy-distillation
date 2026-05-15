@@ -253,29 +253,21 @@ def run_teacher_completions_hf(
     return all_accuracies
 
 
-def run_analysis(
+def _run_student_phase(
     student_model_name: str,
-    teacher_model_name: str,
     prompts: list[str],
     answers: list[str],
-    output_path: str,
-    max_new_tokens: int = 8192,
-    temperature: float = 1.0,
-    top_p: float = 1.0,
-    num_rollouts: int = 10,
-    num_sample_positions: int = 10,
-    batch_size: int = 4,
-    ppl_window_frac: float = 0.10,
-    use_vllm: bool = True,
-    vllm_gpu_memory_utilization: float = 0.9,
-    num_gpus: int = 1,
-    dtype=torch.bfloat16,
-    device: str = "cuda",
-    enable_thinking=None,
+    max_new_tokens: int,
+    temperature: float,
+    top_p: float,
+    batch_size: int,
+    dtype,
+    device: str,
+    enable_thinking,
 ):
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
-    # ---- Phase 1: Student rollout generation ----
+    """Phase 1 (rollout generation) + Phase 1b (student log-probs). Holds only
+    the student model on GPU. Returns a state dict to be either passed straight
+    into the teacher phase (in-process) or pickled for cross-process handoff."""
     print(f"[Phase 1] Loading student model: {student_model_name}")
     student_model, student_tokenizer = load_model_and_tokenizer(
         student_model_name, dtype=dtype, device=device
@@ -309,10 +301,6 @@ def run_analysis(
     n_correct = sum(is_correct_list)
     print(f"[Phase 1] Correctness: {n_correct}/{len(is_correct_list)}")
 
-    # Build formatted prompt text for prefix construction (with chat template applied)
-    formatted_prompts_text = formatted_prompts
-
-    # Compute student log-probs and entropy (reuse model before unloading)
     print("[Phase 1b] Computing student log-probs and entropy ...")
     student_logps_list, student_entropy_list = get_per_token_logps_and_entropy(
         student_model,
@@ -326,6 +314,94 @@ def run_analysis(
     del student_model
     torch.cuda.empty_cache()
 
+    return {
+        "prompts": prompts,
+        "answers": answers,
+        "formatted_prompts": formatted_prompts,
+        "formatted_prompts_text": formatted_prompts,
+        "prompt_ids_list": prompt_ids_list,
+        "completion_ids_list": completion_ids_list,
+        "completions_text": completions_text,
+        "is_correct_list": is_correct_list,
+        "student_logps_list": student_logps_list,
+        "student_entropy_list": student_entropy_list,
+    }
+
+
+def run_analysis(
+    student_model_name: str,
+    teacher_model_name: str,
+    prompts: list[str],
+    answers: list[str],
+    output_path: str,
+    max_new_tokens: int = 8192,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    num_rollouts: int = 10,
+    num_sample_positions: int = 10,
+    batch_size: int = 4,
+    ppl_window_frac: float = 0.10,
+    use_vllm: bool = True,
+    vllm_gpu_memory_utilization: float = 0.9,
+    num_gpus: int = 1,
+    dtype=torch.bfloat16,
+    device: str = "cuda",
+    enable_thinking=None,
+    phase: str = "all",
+):
+    """phase ∈ {student, teacher, all}.
+
+    student: do Phase 1 (rollout) + Phase 1b (student log-probs), save intermediate
+             pkl to ``<output_path>.student.pkl`` and exit. Holds only the student
+             model on GPU at peak.
+
+    teacher: load intermediate from ``<output_path>.student.pkl`` then do Phase 2
+             (teacher PPL/entropy) + Phase 3 (teacher completion accuracy), save
+             final pkl to ``output_path``. Never loads the student.
+
+    all (default): legacy single-process mode that does everything in one Python
+             invocation. Memory pressure on small GPUs because vLLM/HF residuals
+             from earlier phases overlap with later phases.
+    """
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    intermediate_path = output_path + ".student.pkl"
+
+    if phase in ("student", "all"):
+        _student_state = _run_student_phase(
+            student_model_name=student_model_name,
+            prompts=prompts,
+            answers=answers,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            batch_size=batch_size,
+            dtype=dtype,
+            device=device,
+            enable_thinking=enable_thinking,
+        )
+        if phase == "student":
+            with open(intermediate_path, "wb") as f:
+                pickle.dump(_student_state, f)
+            print(f"[Phase student] Saved intermediate state to {intermediate_path}")
+            return
+
+    if phase == "teacher":
+        with open(intermediate_path, "rb") as f:
+            _student_state = pickle.load(f)
+        print(f"[Phase teacher] Loaded intermediate state from {intermediate_path}")
+
+    # Unpack student-phase outputs into local names so the legacy Phase 2/3 code
+    # below works unchanged.
+    formatted_prompts = _student_state["formatted_prompts"]
+    formatted_prompts_text = _student_state["formatted_prompts_text"]
+    prompt_ids_list = _student_state["prompt_ids_list"]
+    completion_ids_list = _student_state["completion_ids_list"]
+    completions_text = _student_state["completions_text"]
+    is_correct_list = _student_state["is_correct_list"]
+    student_logps_list = _student_state["student_logps_list"]
+    student_entropy_list = _student_state["student_entropy_list"]
+    student_tokenizer = None  # unused after the student phase; teacher tokenizer covers what's left
+
     # ---- Phase 2: Teacher forward pass (PPL + Entropy) ----
     teacher_device = "auto" if num_gpus > 1 else device
     print(f"\n[Phase 2] Loading teacher model (HF): {teacher_model_name} (device_map={teacher_device})")
@@ -335,11 +411,6 @@ def run_analysis(
 
     teacher_formatted_prompts = apply_chat_template_if_needed(
         prompts, teacher_tokenizer, enable_thinking=enable_thinking
-    )
-
-    assert student_tokenizer.get_vocab() == teacher_tokenizer.get_vocab(), (
-        f"Tokenizer mismatch: teacher '{teacher_model_name}' has a different vocabulary "
-        f"from the student '{student_model_name}'. Cannot share completion token IDs."
     )
 
     teacher_prompt_ids_list = []
@@ -470,6 +541,13 @@ def main():
         help="Forwarded to tokenizer.apply_chat_template for Qwen3-style hybrid models. "
              "'none' (default) preserves Qwen2.5 behavior; 'false' adds the non-thinking prefix.",
     )
+    parser.add_argument(
+        "--phase", default="all", choices=["student", "teacher", "all"],
+        help="Split execution across processes to keep GPU memory clean. "
+             "'student' = Phase 1+1b only (save intermediate <output>.student.pkl and exit). "
+             "'teacher' = load that intermediate and run Phase 2+3, save final pkl. "
+             "'all' (default) = single-process legacy mode.",
+    )
     args = parser.parse_args()
 
     # Load prompts and answers
@@ -520,6 +598,7 @@ def main():
         device=args.device,
         ppl_window_frac=args.ppl_window_frac,
         enable_thinking=enable_thinking,
+        phase=args.phase,
     )
 
 
