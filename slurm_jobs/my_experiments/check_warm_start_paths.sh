@@ -7,7 +7,7 @@
 #   bash check_warm_start_paths.sh
 
 BASE="${BASE:-/home/cta156/scratch/on-policy-distillation}"
-AT_SFT_ROOT_3B="${AT_SFT_ROOT:-/3dlg-jupiter-project/rethink_gap/model_checkpoints_chapter5/3b-ac-at-sft-model}"
+AT_SFT_ROOT_3B="${AT_SFT_ROOT:-${BASE}/output}"
 
 PASS=0
 FAIL=0
@@ -47,6 +47,7 @@ echo "========================================"
 for ratio in 10 30 50 70 90; do
     check "3B ratio${ratio}" "${AT_SFT_ROOT_3B}/at_sft_Qwen2.5-3B-Instruct_ratio${ratio}_data5000"
 done
+
 
 echo ""
 echo "========================================"

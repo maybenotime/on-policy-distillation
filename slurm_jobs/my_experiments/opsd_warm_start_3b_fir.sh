@@ -27,10 +27,7 @@ BASE="${BASE:-/home/cta156/scratch/on-policy-distillation}"
 AT_RATIO="${SLURM_ARRAY_TASK_ID:-70}"
 
 # ── AT-SFT checkpoint base path ──────────────────────────────────────────────
-# 3B AT-SFT checkpoints were saved to a custom path on the cluster.
-# Adjust AT_SFT_BASE if the path differs.
-AT_SFT_ROOT="${AT_SFT_ROOT:-/3dlg-jupiter-project/rethink_gap/model_checkpoints_chapter5/3b-ac-at-sft-model}"
-AT_SFT_BASE="${AT_SFT_ROOT}/at_sft_Qwen2.5-3B-Instruct_ratio${AT_RATIO}_data5000"
+AT_SFT_BASE="${BASE}/output/at_sft_Qwen2.5-3B-Instruct_ratio${AT_RATIO}_data5000"
 INIT_CHECKPOINT=$(find "$AT_SFT_BASE" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
 
 if [ -z "$INIT_CHECKPOINT" ]; then
