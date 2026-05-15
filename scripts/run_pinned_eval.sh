@@ -39,7 +39,8 @@ for CKPT in $(find "$RUN_DIR" -maxdepth 2 -type d -name "checkpoint-*" | sort -V
         --num_rollouts 4 \
         --num_sample_positions 10 \
         --enable_thinking "$ENABLE_THINKING" \
-        --use_vllm
+        --use_vllm \
+        --vllm_gpu_memory_utilization 0.3
 done
 
 echo "[pinned_eval] done. Outputs in $OUT_BASE"
