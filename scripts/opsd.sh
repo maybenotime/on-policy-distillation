@@ -64,7 +64,7 @@ swift rlhf \
     --lmbda 1.0 \
     --beta 1.0 \
     --temperature 1.0 \
-    --sft_alpha 0 \
+    --sft_alpha "${SFT_ALPHA:-0}" \
     --torch_dtype bfloat16 \
     --max_steps "${MAX_STEPS:-200}" \
     --per_device_train_batch_size 1 \
