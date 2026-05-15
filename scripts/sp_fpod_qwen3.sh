@@ -35,6 +35,12 @@ export WANDB_PROJECT="${WANDB_PROJECT:-prefix_curriculum_opd}"
 
 OUTPUT_DIR="${OUTPUT_BASE_DIR}/sp_fpod_qwen3_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_K${PREFIX_K}_delta${PREFIX_DELTA}_p0${PREFIX_P0}_data${DATA_SIZE}"
 
+RESUME_ARGS=()
+if [ -n "${RESUME_FROM_CKPT:-}" ]; then
+    RESUME_ARGS=(--resume_from_checkpoint "$RESUME_FROM_CKPT")
+    echo "[sp_fpod_qwen3] resuming from $RESUME_FROM_CKPT"
+fi
+
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
     --rlhf_type gkd \
@@ -46,6 +52,7 @@ swift rlhf \
     --train_type full \
     --dataset "../data/prompts_math_swift.jsonl#${DATA_SIZE}" \
     --external_plugins ../source/prefix_curriculum_plugin.py \
+    "${RESUME_ARGS[@]}" \
     --seq_kd false \
     --lmbda 1 \
     --beta 1 \
