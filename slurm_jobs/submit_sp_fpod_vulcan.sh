@@ -74,8 +74,6 @@ mkdir -p "$HF_DATASETS_CACHE"
 # 8 ranks doing simultaneous safe_snapshot_download lock acquire → Errno 116
 # Stale file handle. Models are pre-cached, so skip the hub lookup entirely.
 # (huggingface-cli login was removed from train scripts so whoami-v2 won't fire.)
-export HF_HUB_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
 
 # Save the latest checkpoint path on exit (covers SIGTERM/timeout)
 save_checkpoint() {

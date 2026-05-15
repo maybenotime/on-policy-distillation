@@ -56,8 +56,6 @@ export NCCL_IB_DISABLE=1
 export NCCL_NET=Socket
 export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
 mkdir -p "$HF_DATASETS_CACHE"
-export HF_HUB_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
 
 save_checkpoint() {
     CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
