@@ -1,27 +1,27 @@
 #!/bin/bash
 #SBATCH --account=def-angelx_gpu
 #SBATCH --job-name=opsd-ws-3b
-#SBATCH --array=10,30,50,70,90
+#SBATCH --array=10,30,50
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
 #SBATCH --gres=gpu:h100:1
 #SBATCH --mem=256G
-#SBATCH --time=4:00:00
+#SBATCH --time=2:30:00
 #SBATCH --output=logs/rethink_gap/%x-%A_%a.out
 #SBATCH --error=logs/rethink_gap/%x-%A_%a.err
 #SBATCH --mail-user=cta156@sfu.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 # Chapter 5: OPSD warm-started from AT-SFT checkpoint (3B student, 14B teacher context).
-# Initializes student from AT-SFT ratio-{10,30,50,70,90} checkpoint instead of base model,
+# Initializes student from AT-SFT ratio-{10,30,50} checkpoint instead of base model,
 # then runs standard OPSD to test whether style pre-alignment improves distillation.
 #
 # Usage:
 #   sbatch opsd_warm_start_3b_fir.sh
 #   # or single ratio: sbatch --array=70 opsd_warm_start_3b_fir.sh
 
-set -euo pipefail
+set -euo pipefail   
 
 BASE="${BASE:-/home/cta156/scratch/on-policy-distillation}"
 AT_RATIO="${SLURM_ARRAY_TASK_ID:-70}"
