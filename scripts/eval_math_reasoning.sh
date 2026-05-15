@@ -32,13 +32,15 @@ else
     EVAL_ARGS="--model ${MODEL}"
 fi
 
-# Stock swift eval — dataset_hub defaults to MODELSCOPE which is fine
-# because we pre-download the 5 benchmarks (gsm8k, math_500, aime24,
-# aime25, amc) on the login node into $MODELSCOPE_CACHE via
-# scripts/prefetch_eval_datasets.py. Compute nodes hit cache only.
+# Route through swift_eval_patched.py — Vulcan compute nodes can reach
+# huggingface.co but NOT modelscope.cn (Squid 403). modelscope SDK has no
+# offline mode (it always calls repo_exists which hits modelscope.cn), so
+# pre-downloading to MODELSCOPE_CACHE doesn't help. Stay on HF hub.
+# Patcher also monkey-patches AMCAdapter.record_to_sample to .get()
+# year/url since AI-MO/aimo-validation-amc lacks those fields.
 CUDA_VISIBLE_DEVICES=0 \
-swift eval \
-    --use_hf false \
+python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
+    --use_hf true \
     $EVAL_ARGS \
     --eval_backend Native \
     --infer_backend vllm \
