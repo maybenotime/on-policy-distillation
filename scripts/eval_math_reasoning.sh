@@ -32,13 +32,13 @@ else
     EVAL_ARGS="--model ${MODEL}"
 fi
 
-# Route through swift_eval_patched.py — needed on Vulcan where Squid blocks
-# modelscope.cn (evalscope's TaskConfig defaults to dataset_hub=MODELSCOPE,
-# and swift's --use_hf true does NOT propagate to evalscope). Patcher also
-# fixes the amc adapter's strict record['year'] access.
+# Stock swift eval — dataset_hub defaults to MODELSCOPE which is fine
+# because we pre-download the 5 benchmarks (gsm8k, math_500, aime24,
+# aime25, amc) on the login node into $MODELSCOPE_CACHE via
+# scripts/prefetch_eval_datasets.py. Compute nodes hit cache only.
 CUDA_VISIBLE_DEVICES=0 \
-python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
-    --use_hf true \
+swift eval \
+    --use_hf false \
     $EVAL_ARGS \
     --eval_backend Native \
     --infer_backend vllm \
