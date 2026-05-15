@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Always run from repo root so any external_plugins paths in checkpoint
-# args.json resolve correctly.
+# Run from the scripts/ dir so external_plugins paths stored in checkpoint
+# args.json (e.g. `../source/prefix_curriculum_plugin.py`) resolve correctly.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.."
+cd "$SCRIPT_DIR"
 
 MODEL="${1:-${MODEL:-Qwen/Qwen3-1.7B}}"
 MODEL_TAG="${MODEL##*/}"

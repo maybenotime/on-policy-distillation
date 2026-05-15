@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Always run from repo root so external_plugins paths (e.g. source/opsd_plugin.py)
-# stored in checkpoint args.json resolve correctly.
+# Run from the scripts/ dir so external_plugins paths stored in checkpoint
+# args.json (e.g. `../source/prefix_curriculum_plugin.py` — these were saved
+# relative to the train-time cwd which was scripts/) resolve correctly.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.."
+cd "$SCRIPT_DIR"
 
 MODEL="${1:-${MODEL:-Qwen/Qwen2.5-0.5B-Instruct}}"
 MODEL_TAG="${MODEL##*/}"
