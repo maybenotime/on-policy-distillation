@@ -131,25 +131,46 @@ def _patch_evalscope():
             entry = da.setdefault(dataset_name, {})
             for k, v in override.items():
                 entry.setdefault(k, v)
-        # Override amc to use modelscope dataset_id + force MODELSCOPE
-        # data source for the amc benchmark specifically, so the
-        # MsDataset.load monkey-patch above kicks in and reads the local
-        # arrow cache. Other benchmarks stay on HuggingFace.
+        # Keep amc on its modelscope dataset_id (`evalscope/amc_22-24`) — the
+        # per-benchmark data_source override would be ignored (data_source
+        # comes from TaskConfig.dataset_hub globally), so we instead force
+        # the modelscope path inside RemoteDataLoader.load via
+        # _patch_eval_loader below.
         amc_entry = da.setdefault("amc", {})
         amc_entry.setdefault("dataset_id", "evalscope/amc_22-24")
-        amc_entry.setdefault("data_source", HubType.MODELSCOPE)
         kwargs["dataset_args"] = da
         _orig_init(self, *args, **kwargs)
 
     evalscope.config.TaskConfig.__init__ = _patched_init
 
 
+def _patch_eval_loader():
+    """evalscope's RemoteDataLoader uses one global data_source (from
+    TaskConfig.dataset_hub) for ALL benchmarks. We want HuggingFace for
+    gsm8k/math_500/aime24/aime25 but MODELSCOPE for amc (so the local
+    arrow short-circuit in MsDataset.load kicks in). Override the load()
+    entry point to flip self.data_source to MODELSCOPE for amc only,
+    then delegate to the original."""
+    import evalscope.api.dataset.loader as loader_mod
+    from evalscope.constants import HubType
+
+    orig_load = loader_mod.RemoteDataLoader.load
+
+    def _patched_load(self):
+        if self.data_id_or_path == "evalscope/amc_22-24":
+            self.data_source = HubType.MODELSCOPE
+        return orig_load(self)
+
+    loader_mod.RemoteDataLoader.load = _patched_load
+
+
 def main():
     _patch_evalscope()
     _patch_amc_adapter()
     _patch_msdataset_load()
+    _patch_eval_loader()
     print(
-        "[patch] dataset_hub=HF (amc=MODELSCOPE local), "
+        "[patch] dataset_hub=HF (amc forced to MODELSCOPE in loader.load), "
         "dataset_args=<HF overrides>, "
         "MsDataset.load short-circuited for evalscope/amc_22-24, "
         "AMCAdapter.record_to_sample uses .get()",
