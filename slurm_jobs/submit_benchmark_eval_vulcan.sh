@@ -39,14 +39,13 @@ export TORCH_HOME=/scratch/sya225/hf_cache/torch
 export VLLM_CACHE_ROOT=/scratch/sya225/hf_cache/vllm
 export TMPDIR=/scratch/sya225/hf_cache/tmp
 export EVAL_OUTPUT_BASE=/scratch/sya225/eval_output
-# /scratch is on a network FS that doesn't reliably support fcntl.flock
-# + os.fstat — both HF datasets builder FileLock and HF Hub model lock
-# raise Errno 116 "Stale file handle" intermittently even with single
-# process. Redirect both locks to per-job /tmp (POSIX flock works) and
-# skip hub re-validation entirely (models are pre-cached).
+# HF_DATASETS_CACHE on per-job /tmp to avoid /scratch filelock issues,
+# BUT keep HF_HUB_OFFLINE unset — eval loads benchmark datasets that
+# need HF hub access (Vulcan compute nodes reach huggingface.co fine).
+# Model load uses an absolute local ckpt path so HF_HUB_OFFLINE is moot
+# for the model. The amc local-arrow short-circuit in
+# source/swift_eval_patched.py handles modelscope.cn blocking.
 export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
-export HF_HUB_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
 mkdir -p "$TMPDIR" "$VLLM_CACHE_ROOT" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$EVAL_OUTPUT_BASE" "$HF_DATASETS_CACHE"
 
 RUN_TAG=$(basename "$RUN_DIR")
