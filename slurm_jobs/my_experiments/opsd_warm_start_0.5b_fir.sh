@@ -1,0 +1,79 @@
+#!/bin/bash
+#SBATCH --account=def-angelx_gpu
+#SBATCH --job-name=opsd-ws-0.5b
+#SBATCH --array=30,50,70
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=16
+#SBATCH --gres=gpu:h100:1
+#SBATCH --mem=256G
+#SBATCH --time=6:00:00
+#SBATCH --output=logs/rethink_gap/%x-%A_%a.out
+#SBATCH --error=logs/rethink_gap/%x-%A_%a.err
+#SBATCH --mail-user=cta156@sfu.ca
+#SBATCH --mail-type=BEGIN,END,FAIL
+
+# Chapter 5: OPSD warm-started from AT-SFT checkpoint (0.5B student, 14B teacher context).
+# Initializes student from AT-SFT ratio-{30,50,70} checkpoint instead of base model,
+# then runs standard OPSD to test whether style pre-alignment improves distillation.
+#
+# Usage:
+#   sbatch opsd_warm_start_0.5b_fir.sh
+#   # or single ratio: sbatch --array=70 opsd_warm_start_0.5b_fir.sh
+
+set -euo pipefail
+
+BASE="${BASE:-/home/cta156/scratch/on-policy-distillation}"
+AT_RATIO="${SLURM_ARRAY_TASK_ID:-70}"
+
+# ── AT-SFT checkpoint base path ──────────────────────────────────────────────
+# Points to the versioned ms-swift output dir; find latest checkpoint inside.
+AT_SFT_BASE="${BASE}/output/at_sft_Qwen2.5-0.5B-Instruct_ratio${AT_RATIO}_data5000"
+INIT_CHECKPOINT=$(find "$AT_SFT_BASE" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
+
+if [ -z "$INIT_CHECKPOINT" ]; then
+    echo "ERROR: No AT-SFT checkpoint found under $AT_SFT_BASE" >&2
+    exit 1
+fi
+
+echo "========================================"
+echo "OPSD Warm Start — 0.5B Student"
+echo "========================================"
+echo "AT_RATIO         = $AT_RATIO"
+echo "Init checkpoint  = $INIT_CHECKPOINT"
+
+cd "$BASE"
+module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv
+source test/bin/activate
+
+export HF_HOME="${HF_HOME:-/home/cta156/.cache/huggingface}"
+export MODELSCOPE_CACHE="${MODELSCOPE_CACHE:-/home/cta156/.cache/modelscope}"
+export TORCH_HOME="${TORCH_HOME:-/home/cta156/.cache/torch}"
+export VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-/home/cta156/.cache/vllm}"
+export TMPDIR="${TMPDIR:-/home/cta156/.cache/tmp}"
+export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-/home/cta156/.cache/huggingface/datasets}"
+
+mkdir -p "$HF_HOME" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$VLLM_CACHE_ROOT" "$TMPDIR" "$HF_DATASETS_CACHE"
+
+export MODEL="$INIT_CHECKPOINT"
+export OPSD_MODE=single
+export OPSD_TEACHER_MODEL=Qwen2.5-14B-Instruct
+export OPSD_DATA_PATH="${BASE}/data/math_all_teachers_correct.jsonl"
+export DATA_SIZE=840
+export OUTPUT="${BASE}/output/opsd_ws_0.5B_atsft_ratio${AT_RATIO}_teacher14B"
+
+save_checkpoint() {
+    CHECKPOINT=$(find "$OUTPUT" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
+    if [ -n "$CHECKPOINT" ]; then
+        echo "$CHECKPOINT" > "${BASE}/checkpoint_path_${SLURM_JOB_ID}_ws0.5b_ratio${AT_RATIO}.txt"
+        echo "Checkpoint: $CHECKPOINT"
+    else
+        echo "No checkpoint found" >&2
+    fi
+}
+trap save_checkpoint EXIT
+
+cd "${BASE}/scripts"
+bash opsd.sh
+
+echo "OPSD warm-start 0.5B done: ratio=${AT_RATIO}"
