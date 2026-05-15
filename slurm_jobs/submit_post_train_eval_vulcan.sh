@@ -35,13 +35,16 @@ module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv
 mkdir -p logs results/pinned_curves
 
 export HF_HOME=/scratch/sya225/hf_cache
-export HF_DATASETS_CACHE=/scratch/sya225/hf_cache/datasets
 export TRANSFORMERS_CACHE=/scratch/sya225/hf_cache
 export MODELSCOPE_CACHE=/scratch/sya225/hf_cache/modelscope
 export TORCH_HOME=/scratch/sya225/hf_cache/torch
 export VLLM_CACHE_ROOT=/scratch/sya225/hf_cache/vllm
 export TMPDIR=/scratch/sya225/hf_cache/tmp
-mkdir -p "$TMPDIR" "$VLLM_CACHE_ROOT" "$MODELSCOPE_CACHE" "$TORCH_HOME"
+# Same NFS Errno 116 issue as training: keep dataset/hub locks off /scratch.
+export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+mkdir -p "$TMPDIR" "$VLLM_CACHE_ROOT" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$HF_DATASETS_CACHE"
 
 RUN_TAG=$(basename "$RUN_DIR")
 
