@@ -13,7 +13,7 @@
 #SBATCH --mail-user=cta156@sfu.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 
-# Chapter 5: LI-OPSD with 14B reference solutions — 0.5B student.
+# Chapter 5: 5k answer-conditioned LI-OPSD approximation — 0.5B student.
 # Array task ID is the late-intervention ratio in percent:
 #   30 / 50 / 70 / 90
 #
@@ -31,7 +31,7 @@ case "$RATIO" in
 esac
 
 echo "========================================"
-echo "LI-OPSD 0.5B — 14B ref — ratio=${RATIO}%"
+echo "LI-OPSD 0.5B — 5k answer-conditioned — ratio=${RATIO}%"
 echo "========================================"
 
 cd "$BASE"
@@ -48,13 +48,19 @@ export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-/home/cta156/.cache/huggingface/d
 mkdir -p "$HF_HOME" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$VLLM_CACHE_ROOT" "$TMPDIR" "$HF_DATASETS_CACHE"
 
 export MODEL="Qwen/Qwen2.5-0.5B-Instruct"
-export OPSD_MODE=single
-export OPSD_TEACHER_MODEL=Qwen2.5-14B-Instruct
-export OPSD_DATA_PATH="${BASE}/data/math_all_teachers_correct.jsonl"
-export DATA_SIZE=840
+export LI_OPSD_DATA_PATH="${BASE}/data/li_opsd_answer_first5k.jsonl"
+export DATA_SIZE=5000
 export SFT_ALPHA=0.0
 export LI_OPSD_RATIO="$RATIO"
-export OUTPUT="${BASE}/output/li_opsd_0.5B_14bref_ratio${RATIO}"
+export OUTPUT="${BASE}/output/li_opsd_0.5B_answer5k_ratio${RATIO}"
+
+if [ ! -f "$LI_OPSD_DATA_PATH" ]; then
+    python source/build_li_opsd_data.py \
+        --prompts "${BASE}/data/prompts_math_swift.jsonl" \
+        --answers "${BASE}/data/prompts_math_with_answers.jsonl" \
+        --output "$LI_OPSD_DATA_PATH" \
+        --limit "$DATA_SIZE"
+fi
 
 save_checkpoint() {
     CHECKPOINT=$(find "$OUTPUT" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
@@ -68,4 +74,4 @@ trap save_checkpoint EXIT
 cd "${BASE}/scripts"
 VLLM_UTIL=0.40 bash li_opsd.sh
 
-echo "Done: LI-OPSD 0.5B 14B-ref ratio=${RATIO}%"
+echo "Done: LI-OPSD 0.5B answer5k ratio=${RATIO}%"
