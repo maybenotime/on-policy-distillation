@@ -43,6 +43,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DATASET_SPEC="${OPD_DATASET:-${REPO_DIR}/data/prompts_math_swift.jsonl#${DATA_SIZE}}"
 PER_DEVICE_BS="${PER_DEVICE_BS:-2}"
 GRAD_ACCUM="${GRAD_ACCUM:-2}"
+VLLM_GPU_MEM_UTIL="${VLLM_GPU_MEM_UTIL:-0.5}"
 TEACHER_DEEPSPEED_FLAG=""
 if [ -n "${TEACHER_DEEPSPEED:-}" ]; then TEACHER_DEEPSPEED_FLAG="--teacher_deepspeed $TEACHER_DEEPSPEED"; fi
 
@@ -83,7 +84,7 @@ swift rlhf \
     --use_vllm true \
     --vllm_mode colocate \
     --sleep_level 1 \
-    --vllm_gpu_memory_utilization 0.5 \
+    --vllm_gpu_memory_utilization "$VLLM_GPU_MEM_UTIL" \
     $TEACHER_DEEPSPEED_FLAG
 
 CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d | sort -V | tail -1)
