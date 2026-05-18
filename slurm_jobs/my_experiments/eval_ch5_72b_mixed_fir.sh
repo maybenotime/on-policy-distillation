@@ -26,6 +26,7 @@ export RUN_NAME="${RUN_NAME:-chapter5-72b-mixed}"
 export OUTPUT_PATH="${OUTPUT_PATH:-${SCRATCH}/eval_output/${RUN_NAME}}"
 export TASKS="${TASKS:-gsm8k_cot_zeroshot,hendrycks_math_500,AMC,Olympiad,AIME}"
 export CUDA_VISIBLE_DEVICES="0"
+export VLLM_USE_V1=0
 
 export MODEL_LIST="${MODEL_LIST:-$(cat <<'EOF'
 rsft_then_opsd_3B_72bref_mixed10pct_ckpt200 /home/cta156/scratch/on-policy-distillation/output/rsft_then_opsd_3B_72bref_mixed10pct/v0-20260516-192904/checkpoint-200
