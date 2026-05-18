@@ -12,6 +12,7 @@
 #SBATCH --error=logs/rethink_gap/%x-%A_%a.err
 #SBATCH --mail-user=cta156@sfu.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --exclude=fc10510,fc10404
 
 # Chapter 5: LI-OPSD 0.5B — diagnostic 115 mixing experiment.
 # Baseline: li_opsd_0.5B ratio=50 (pure 5k li_opsd data).

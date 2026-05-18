@@ -12,6 +12,7 @@
 #SBATCH --error=logs/rethink_gap/%x-%A_%a.err
 #SBATCH --mail-user=cta156@sfu.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --exclude=fc10510,fc10404
 
 # Chapter 5: 5k answer-conditioned LI-OPSD approximation — 3B student.
 # Array task ID is the late-intervention ratio in percent:
