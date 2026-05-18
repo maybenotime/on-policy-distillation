@@ -17,7 +17,11 @@ TEACHER_MODEL_TAG="${TEACHER_MODEL##*/}"
 CACHE_BASE="${CACHE_BASE:-/home/sya225/.cache}"
 OUTPUT_BASE_DIR="${OUTPUT_BASE_DIR:-/localscratch/sya225/output}"
 
-export HF_HOME="${HF_HOME:-$CACHE_BASE/huggingface}"
+# Use $CACHE_BASE directly as HF_HOME (NOT $CACHE_BASE/huggingface) so train
+# shares cache with bench-eval. Old wrapper added /huggingface suffix which
+# created a duplicate model tree and caused NFS flock races when a teacher
+# wasn't present at both paths.
+export HF_HOME="${HF_HOME:-$CACHE_BASE}"
 export MODELSCOPE_CACHE="${MODELSCOPE_CACHE:-$CACHE_BASE/modelscope}"
 export TORCH_HOME="${TORCH_HOME:-$CACHE_BASE/torch}"
 export VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-$CACHE_BASE/vllm}"
@@ -48,13 +52,13 @@ swift rlhf \
     --num_train_epochs "$NUM_EPOCHS" \
     --per_device_train_batch_size 1 \
     --learning_rate 1e-5 \
-    --gradient_accumulation_steps 4 \
-    --save_strategy steps \
-    --save_steps 0.1 \
-    --save_total_limit 11 \
+    --gradient_accumulation_steps 3 \
+    --save_strategy epoch \
+    --save_steps 1 \
+    --save_total_limit 2 \
     --logging_steps 1 \
     --max_length 8192 \
-    --max_completion_length 4096 \
+    --max_completion_length 6144 \
     --report_to wandb \
     --output_dir "$OUTPUT_DIR" \
     --warmup_ratio 0.05 \

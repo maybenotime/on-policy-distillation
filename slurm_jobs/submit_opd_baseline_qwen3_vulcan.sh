@@ -3,16 +3,16 @@
 #SBATCH --account=aip-angelx
 #SBATCH --gres=gpu:l40s:4
 #SBATCH --cpus-per-task=64
-#SBATCH --time=11:00:00
+#SBATCH --time=11:59:00
 #SBATCH --ntasks-per-node=1
-#SBATCH --nodes=2
+#SBATCH --nodes=3
 #SBATCH --mem=0
 #SBATCH --exclusive
 #SBATCH --output=logs/%N-%j.out
 #SBATCH --mail-user=yangshipngnlp@gmail.com
 #SBATCH --mail-type=BEGIN,END,FAIL
 
-# Plain GKD baseline for Qwen3 non-thinking — Vulcan, 2 nodes × 4 L40S
+# Plain GKD baseline for Qwen3 non-thinking — Vulcan, 3 nodes × 4 L40S
 #
 # Args:
 #   $1 = student model    (default Qwen/Qwen3-1.7B)
@@ -51,7 +51,8 @@ export NCCL_ASYNC_ERROR_HANDLING=1
 export NCCL_IB_DISABLE=1
 export NCCL_NET=Socket
 export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
-mkdir -p "$HF_DATASETS_CACHE"
+export MODELSCOPE_CACHE=/tmp/sya225_ms_cache_$SLURM_JOB_ID  # local-disk for swift.safe_ddp_context FileLock
+mkdir -p "$HF_DATASETS_CACHE" "$MODELSCOPE_CACHE"
 
 save_checkpoint() {
     CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
