@@ -2,7 +2,7 @@
 #SBATCH -J opd-q2-srv
 #SBATCH --account=rrg-angelx
 #SBATCH --gres=gpu:h100:4
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=192
 #SBATCH --time=11:59:00
 #SBATCH --ntasks-per-node=1
 #SBATCH --nodes=1
