@@ -29,8 +29,9 @@ TEMPERATURE="${TEMPERATURE:-1.0}"
 MAX_TOKENS="${MAX_TOKENS:-8192}"
 ENABLE_THINKING="${ENABLE_THINKING:-none}"
 PROMPTS_JSONL="${PROMPTS_JSONL:-/project/aip-angelx/sya225/on-policy-distillation/data/prompts_math_with_answers.jsonl}"
-DATA_PARALLEL_SIZE="${DATA_PARALLEL_SIZE:-4}"
+DATA_PARALLEL_SIZE="${DATA_PARALLEL_SIZE:-1}"
 TENSOR_PARALLEL_SIZE="${TENSOR_PARALLEL_SIZE:-1}"
+START_IDX="${START_IDX:-0}"
 
 REPO_DIR=/project/aip-angelx/sya225/on-policy-distillation
 cd "$REPO_DIR"
@@ -64,6 +65,7 @@ python source/compute_pass_at_k.py \
     --enable_thinking "$ENABLE_THINKING" \
     --tensor_parallel_size "$TENSOR_PARALLEL_SIZE" \
     --data_parallel_size "$DATA_PARALLEL_SIZE" \
+    --start_idx "$START_IDX" \
     --output "results/correctness/${OUTPUT_TAG}.json"
 
 echo "[pass-at-k] DONE"
