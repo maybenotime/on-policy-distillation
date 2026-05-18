@@ -41,8 +41,15 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DATASET_SPEC="${OPD_DATASET:-${REPO_DIR}/data/prompts_math_swift.jsonl#${DATA_SIZE}}"
 
 VLLM_SERVER_PORT="${VLLM_SERVER_PORT:-8000}"
-PER_DEVICE_BS="${PER_DEVICE_BS:-4}"
-GRAD_ACCUM="${GRAD_ACCUM:-3}"
+PER_DEVICE_BS="${PER_DEVICE_BS:-1}"
+GRAD_ACCUM="${GRAD_ACCUM:-10}"
+TEACHER_DEEPSPEED="${TEACHER_DEEPSPEED:-}"
+
+TEACHER_DS_ARGS=()
+if [ -n "$TEACHER_DEEPSPEED" ]; then
+    TEACHER_DS_ARGS=(--teacher_deepspeed "$TEACHER_DEEPSPEED")
+    echo "[opd_baseline_server] using teacher_deepspeed=$TEACHER_DEEPSPEED"
+fi
 
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 swift rlhf \
@@ -81,7 +88,8 @@ swift rlhf \
     --use_vllm true \
     --vllm_mode server \
     --vllm_server_host 127.0.0.1 \
-    --vllm_server_port "$VLLM_SERVER_PORT"
+    --vllm_server_port "$VLLM_SERVER_PORT" \
+    "${TEACHER_DS_ARGS[@]}"
 
 CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d | sort -V | tail -1)
 echo "$CHECKPOINT" > ../checkpoint_path_${SLURM_JOB_ID:-local}.txt
