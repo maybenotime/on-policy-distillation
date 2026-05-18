@@ -45,7 +45,8 @@ export TRANSFORMERS_CACHE=/scratch/sya225/hf_cache
 export MODELSCOPE_CACHE=/scratch/sya225/hf_cache/modelscope
 export TORCH_HOME=/scratch/sya225/hf_cache/torch
 export VLLM_CACHE_ROOT=/scratch/sya225/hf_cache/vllm
-export TMPDIR=/scratch/sya225/hf_cache/tmp
+export TMPDIR=/tmp/sya225_passatk_${SLURM_JOB_ID}
+export TORCHINDUCTOR_CACHE_DIR="${TMPDIR}/torchinductor"
 export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
 mkdir -p "$TMPDIR" "$VLLM_CACHE_ROOT" "$MODELSCOPE_CACHE" "$TORCH_HOME" "$HF_DATASETS_CACHE"
 
