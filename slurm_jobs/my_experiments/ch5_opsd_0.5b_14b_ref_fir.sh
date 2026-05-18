@@ -11,7 +11,7 @@
 #SBATCH --error=logs/rethink_gap/%x-%j.err
 #SBATCH --mail-user=cta156@sfu.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --exclude=fc10510,fc10404
+#SBATCH --exclude=fc10510,fc10404,fc10508
 
 # Chapter 5: OPSD with 14B reference solutions — 0.5B student, base initialization.
 # Pure OPSD baseline (sft_alpha=0.0) on 840 math_all_teachers_correct problems.
