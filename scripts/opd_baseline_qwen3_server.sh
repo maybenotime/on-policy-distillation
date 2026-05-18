@@ -34,7 +34,9 @@ export WANDB_PROJECT="${WANDB_PROJECT:-prefix_curriculum_opd}"
 
 OUTPUT_TAG_SUFFIX="${OUTPUT_TAG_SUFFIX:-data${DATA_SIZE}}"
 OUTPUT_DIR="${OUTPUT_BASE_DIR}/opd_baseline_qwen3_${STUDENT_MODEL_TAG}_teacher_${TEACHER_MODEL_TAG}_epochs${NUM_EPOCHS}_${OUTPUT_TAG_SUFFIX}"
-DATASET_SPEC="${OPD_DATASET:-../data/prompts_math_swift.jsonl#${DATA_SIZE}}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+DATASET_SPEC="${OPD_DATASET:-${REPO_DIR}/data/prompts_math_swift.jsonl#${DATA_SIZE}}"
 
 VLLM_SERVER_PORT="${VLLM_SERVER_PORT:-8000}"
 
