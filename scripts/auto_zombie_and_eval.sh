@@ -45,7 +45,7 @@ done
 # Scan recent train job IDs; if COMPLETED and not in state file, submit bench.
 for JOB in $(sacct -u sya225 -X --noheader -o JobID,State,JobName -S "$(date -d '1 day ago' +%Y-%m-%dT%H:%M:%S)" 2>/dev/null \
               | awk '$2=="COMPLETED" && ($3=="opd-base" || $3=="opd-base-q3") {print $1}'); do
-    if grep -q "^EVAL_SUBMITTED:${JOB}$" "$STATE_FILE"; then continue; fi
+    if grep -q "^EVAL_SUBMITTED:${JOB}:" "$STATE_FILE"; then continue; fi
     # Find the ckpt path from this job's log
     MAIN_LOG=$(ls logs/*-${JOB}.out 2>/dev/null | head -1)
     [ -z "$MAIN_LOG" ] && continue
