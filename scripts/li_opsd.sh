@@ -26,6 +26,9 @@ echo "LI_OPSD_DATA_PATH  = $LI_OPSD_DATA_PATH"
 echo "DATA_SIZE          = $DATA_SIZE"
 echo "MODEL              = $MODEL"
 echo "Output dir         = $OUTPUT"
+echo "SLEEP_LEVEL        = ${SLEEP_LEVEL:-0}"
+echo "SAVE_STEPS         = ${SAVE_STEPS:-50}"
+echo "SAVE_TOTAL_LIMIT   = ${SAVE_TOTAL_LIMIT:-7}"
 echo "NOTE: this is prompt-level LI-OPSD approximation, not suffix-only KL masking."
 
 export MASTER_PORT="${MASTER_PORT:-$((29500 + ${SLURM_JOB_ID:-0} % 10000))}"
@@ -45,19 +48,19 @@ swift rlhf \
     --vllm_mode colocate \
     --vllm_gpu_memory_utilization "${VLLM_UTIL:-0.4}" \
     --vllm_max_model_len 2048 \
-    --sleep_level 1 \
+    --sleep_level "${SLEEP_LEVEL:-0}" \
     --lmbda 1.0 \
     --beta 1.0 \
     --temperature 1.0 \
     --sft_alpha "${SFT_ALPHA:-0}" \
     --torch_dtype bfloat16 \
-    --max_steps "${MAX_STEPS:-200}" \
+    --max_steps "${MAX_STEPS:-320}" \
     --per_device_train_batch_size 1 \
     --gradient_accumulation_steps 16 \
     --learning_rate 2e-5 \
     --warmup_ratio 0.05 \
-    --save_steps 50 \
-    --save_total_limit 4 \
+    --save_steps "${SAVE_STEPS:-50}" \
+    --save_total_limit "${SAVE_TOTAL_LIMIT:-7}" \
     --logging_steps 1 \
     --max_length 2048 \
     --max_completion_length 1024 \
