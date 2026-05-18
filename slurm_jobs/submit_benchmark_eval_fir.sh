@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu:h100:1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=64G
-#SBATCH --time=3:59:00
+#SBATCH --time=2:30:00
 #SBATCH --output=logs/%N-%j.out
 #SBATCH --mail-user=yangshipngnlp@gmail.com
 #SBATCH --mail-type=BEGIN,END,FAIL
