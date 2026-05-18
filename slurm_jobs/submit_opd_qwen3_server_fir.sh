@@ -57,6 +57,9 @@ VLLM_SERVER_PORT="${VLLM_SERVER_PORT:-8000}"
 PER_DEVICE_BS="${PER_DEVICE_BS:-1}"
 GRAD_ACCUM="${GRAD_ACCUM:-10}"
 TEACHER_DEEPSPEED="${TEACHER_DEEPSPEED:-}"
+# Force absolute dataset path so swift rlhf finds it regardless of cwd
+# (Q3 train script default is the relative path ../data/prompts_math_swift.jsonl).
+export OPD_DATASET="${OPD_DATASET:-${REPO_DIR}/data/prompts_math_swift.jsonl#${DATA_SIZE}}"
 
 save_checkpoint() {
     CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
