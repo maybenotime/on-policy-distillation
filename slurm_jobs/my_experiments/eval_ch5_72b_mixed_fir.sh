@@ -21,26 +21,47 @@ source /scratch/cta156/on-policy-distillation/test/bin/activate
 
 HARNESS_DIR="/project/def-angelx/cta156/Rethink-Learnability-Gap/lm-evaluation-harness"
 SCRATCH="/home/cta156/scratch/on-policy-distillation"
+OUTPUT_BASE="${SCRATCH}/eval_output/chapter5-72b-mixed"
+TASKS="gsm8k_cot_zeroshot,hendrycks_math_500,AMC,Olympiad,AIME"
 
-export RUN_NAME="${RUN_NAME:-chapter5-72b-mixed}"
-export OUTPUT_PATH="${OUTPUT_PATH:-${SCRATCH}/eval_output/${RUN_NAME}}"
-export TASKS="${TASKS:-gsm8k_cot_zeroshot,hendrycks_math_500,AMC,Olympiad,AIME}"
-export CUDA_VISIBLE_DEVICES="0"
-export VLLM_USE_V1=0
-export VLLM_WORKER_MULTIPROC_METHOD=spawn
-
-export MODEL_LIST="${MODEL_LIST:-$(cat <<'EOF'
-rsft_then_opsd_3B_72bref_mixed10pct_ckpt200 /home/cta156/scratch/on-policy-distillation/output/rsft_then_opsd_3B_72bref_mixed10pct/v0-20260516-192904/checkpoint-200
-rsft_then_opsd_3B_72bref_mixed30pct_ckpt200 /home/cta156/scratch/on-policy-distillation/output/rsft_then_opsd_3B_72bref_mixed30pct/v0-20260516-192904/checkpoint-200
-EOF
-)}"
-
-echo "HARNESS_DIR=${HARNESS_DIR}"
-echo "OUTPUT_PATH=${OUTPUT_PATH}"
-echo "TASKS=${TASKS}"
-
-mkdir -p "$OUTPUT_PATH"
 cd "$HARNESS_DIR"
-bash run_lm_eval_models.sh
 
-echo "Done."
+declare -A MODELS=(
+    ["rsft_then_opsd_3B_72bref_mixed10pct_ckpt200"]="${SCRATCH}/output/rsft_then_opsd_3B_72bref_mixed10pct/v0-20260516-192904/checkpoint-200"
+    ["rsft_then_opsd_3B_72bref_mixed30pct_ckpt200"]="${SCRATCH}/output/rsft_then_opsd_3B_72bref_mixed30pct/v0-20260516-192904/checkpoint-200"
+)
+
+for LABEL in "${!MODELS[@]}"; do
+    MODEL_PATH="${MODELS[$LABEL]}"
+    OUT_DIR="${OUTPUT_BASE}/${LABEL}"
+    mkdir -p "$OUT_DIR"
+
+    echo "========================================"
+    echo "Evaluating: ${LABEL}"
+    echo "Path:       ${MODEL_PATH}"
+    echo "Output:     ${OUT_DIR}"
+    echo "========================================"
+
+    lm_eval --model hf \
+        --model_args pretrained="${MODEL_PATH}",dtype=bfloat16 \
+        --tasks "$TASKS" \
+        --batch_size auto \
+        --gen_kwargs do_sample=false,temperature=0,max_gen_toks=8192 \
+        --log_samples \
+        --trust_remote_code \
+        --output_path "$OUT_DIR" \
+        --apply_chat_template
+
+    echo "Done: ${LABEL}"
+done
+
+echo "========================================"
+echo "All evals complete. Packing results..."
+echo "========================================"
+
+ARCHIVE="${SCRATCH}/eval_output/chapter5-72b-mixed_${SLURM_JOB_ID}.tar.gz"
+tar -czf "$ARCHIVE" -C "${SCRATCH}/eval_output" "chapter5-72b-mixed"
+
+echo "Archive: ${ARCHIVE}"
+echo "Pull with:"
+echo "  scp ${USER}@$(hostname -f):${ARCHIVE} ~/Downloads/"
