@@ -38,7 +38,7 @@
 
 set -u
 
-REPO_DIR=/scratch/sya225/on-policy-distillation
+REPO_DIR=/project/aip-angelx/sya225/on-policy-distillation
 cd "$REPO_DIR"
 
 module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv
