@@ -10,13 +10,24 @@ touch "$STATE_FILE"
 for JOB in $(squeue -u sya225 -h -o '%i %j' | awk '$2=="opd-base" || $2=="opd-base-q3" {print $1}'); do
     F=$(ls logs/*-${JOB}-0.out 2>/dev/null | head -1)
     [ -z "$F" ] && continue
-    if grep -q "NCCL WARN socketProgress: Connection closed" "$F" 2>/dev/null; then
-        LAST_LOSS=$(grep -E "'loss':" "$F" 2>/dev/null | tail -1)
-        if [ -z "$LAST_LOSS" ]; then
+    # Pattern A: explicit socketProgress fail
+    HAS_NCCL_FAIL=$(grep -c "NCCL WARN socketProgress: Connection closed" "$F" 2>/dev/null)
+    # Pattern B: NCCL version loaded but no loss line + elapsed > 30min (silent hang)
+    HAS_NCCL_INIT=$(grep -c "NCCL version" "$F" 2>/dev/null)
+    LAST_LOSS=$(grep -E "'loss':" "$F" 2>/dev/null | tail -1)
+    IS_ZOMBIE=0
+    if [ "${HAS_NCCL_FAIL:-0}" -gt 0 ] && [ -z "$LAST_LOSS" ]; then IS_ZOMBIE=1; fi
+    if [ "${HAS_NCCL_INIT:-0}" -gt 0 ] && [ -z "$LAST_LOSS" ]; then
+        ELAPSED2=$(squeue -h -j "$JOB" -o '%M' 2>/dev/null | head -1)
+        E2_SEC=$(echo "$ELAPSED2" | awk -F: '{ if(NF==3) print $1*3600+$2*60+$3; else if(NF==2) print $1*60+$2; else print $1 }')
+        if [ -n "$E2_SEC" ] && [ "$E2_SEC" -gt 1800 ]; then IS_ZOMBIE=1; fi  # 30min
+    fi
+    if [ "$IS_ZOMBIE" = "1" ]; then
+        if true; then
             ELAPSED=$(squeue -h -j "$JOB" -o '%M' 2>/dev/null | head -1)
             E_SEC=$(echo "$ELAPSED" | awk -F: '{ if(NF==3) print $1*3600+$2*60+$3; else if(NF==2) print $1*60+$2; else print $1 }')
             if [ -n "$E_SEC" ] && [ "$E_SEC" -gt 600 ]; then
-                echo "[zombie] JOB=$JOB elapsed=$ELAPSED NCCL fail"
+                echo "[zombie] JOB=$JOB elapsed=$ELAPSED stuck (no loss after NCCL init)"
                 MAIN_LOG=$(ls logs/*-${JOB}.out 2>/dev/null | head -1)
                 STU=$(grep -oE 'student=[^ ]+' "$MAIN_LOG" 2>/dev/null | head -1 | cut -d= -f2)
                 TCH=$(grep -oE 'teacher=[^ ]+' "$MAIN_LOG" 2>/dev/null | head -1 | cut -d= -f2)
