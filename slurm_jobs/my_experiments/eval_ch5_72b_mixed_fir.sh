@@ -16,8 +16,8 @@ set -euo pipefail
 
 echo "Job $SLURM_JOB_ID running on $SLURM_NODELIST"
 
-module load StdEnv/2023 gcc cuda/12.2 python/3.10 arrow/17.0.0
-source /scratch/cta156/venvs/rethink-gap/bin/activate
+module load StdEnv/2023 python/3.12 cuda/12.6 arrow/21.0.0 gcc opencv
+source /scratch/cta156/on-policy-distillation/test/bin/activate
 
 HARNESS_DIR="/project/def-angelx/cta156/Rethink-Learnability-Gap/lm-evaluation-harness"
 SCRATCH="/home/cta156/scratch/on-policy-distillation"
