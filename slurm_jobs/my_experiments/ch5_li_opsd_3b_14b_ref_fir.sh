@@ -53,7 +53,7 @@ export DATA_SIZE=5000
 export SFT_ALPHA=0.0
 export LI_OPSD_RATIO="$RATIO"
 export OUTPUT="${BASE}/output/li_opsd_3B_answer5k_ratio${RATIO}"
-export SLEEP_LEVEL=0
+export SLEEP_LEVEL=1
 export SAVE_STEPS=25
 export SAVE_TOTAL_LIMIT=8
 
@@ -75,6 +75,6 @@ save_checkpoint() {
 trap save_checkpoint EXIT
 
 cd "${BASE}/scripts"
-VLLM_UTIL=0.25 bash li_opsd.sh
+VLLM_UTIL=0.35 bash li_opsd.sh
 
 echo "Done: LI-OPSD 3B answer5k ratio=${RATIO}%"
