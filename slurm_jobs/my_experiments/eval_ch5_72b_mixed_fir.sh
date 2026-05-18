@@ -4,9 +4,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
-#SBATCH --gres=gpu:h100:4
-#SBATCH --mem=128G
-#SBATCH --time=2:00:00
+#SBATCH --gres=gpu:h100:1
+#SBATCH --mem=64G
+#SBATCH --time=12:00:00
 #SBATCH --output=logs/rethink_gap/%x-%j.out
 #SBATCH --error=logs/rethink_gap/%x-%j.err
 #SBATCH --mail-user=cta156@sfu.ca
@@ -23,6 +23,8 @@ HARNESS_DIR="/project/def-angelx/cta156/Rethink-Learnability-Gap/lm-evaluation-h
 SCRATCH="/home/cta156/scratch/on-policy-distillation"
 OUTPUT_BASE="${SCRATCH}/eval_output/chapter5-72b-mixed"
 TASKS="gsm8k_cot_zeroshot,hendrycks_math_500,AMC,Olympiad,AIME"
+
+export CUDA_VISIBLE_DEVICES=0
 
 cd "$HARNESS_DIR"
 
