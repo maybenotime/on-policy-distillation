@@ -2,12 +2,11 @@
 #SBATCH -J opd-q2-srv
 #SBATCH --account=rrg-angelx
 #SBATCH --gres=gpu:h100:4
-#SBATCH --cpus-per-task=192
+#SBATCH --cpus-per-task=32
 #SBATCH --time=11:59:00
 #SBATCH --ntasks-per-node=1
 #SBATCH --nodes=1
-#SBATCH --mem=0
-#SBATCH --exclusive
+#SBATCH --mem=256G
 #SBATCH --output=logs/%N-%j.out
 #SBATCH --mail-user=yangshipngnlp@gmail.com
 #SBATCH --mail-type=BEGIN,END,FAIL
