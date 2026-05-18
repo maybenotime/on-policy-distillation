@@ -42,7 +42,8 @@ TEACHER_TAG=$(basename "$TEACHER_MODEL")
 export CACHE_BASE=/scratch/sya225/hf_cache
 export OUTPUT_BASE_DIR=/scratch/sya225/checkpoints
 
-OUTPUT_DIR="${OUTPUT_BASE_DIR}/opd_baseline_${STUDENT_TAG}_teacher_${TEACHER_TAG}_epochs${NUM_EPOCHS}_data${DATA_SIZE}"
+OUTPUT_TAG_SUFFIX="${OUTPUT_TAG_SUFFIX:-data${DATA_SIZE}}"
+OUTPUT_DIR="${OUTPUT_BASE_DIR}/opd_baseline_${STUDENT_TAG}_teacher_${TEACHER_TAG}_epochs${NUM_EPOCHS}_${OUTPUT_TAG_SUFFIX}"
 
 # Multi-node distributed rendezvous.
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
@@ -55,7 +56,8 @@ export NCCL_ASYNC_ERROR_HANDLING=1
 export NCCL_IB_DISABLE=1
 export NCCL_NET=Socket
 export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
-mkdir -p "$HF_DATASETS_CACHE"
+export MODELSCOPE_CACHE=/tmp/sya225_ms_cache_$SLURM_JOB_ID  # local-disk for swift.safe_ddp_context FileLock
+mkdir -p "$HF_DATASETS_CACHE" "$MODELSCOPE_CACHE"
 
 save_checkpoint() {
     CHECKPOINT=$(find "$OUTPUT_DIR" -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
@@ -74,6 +76,7 @@ echo "  MASTER_ADDR=$MASTER_ADDR  NNODES=$NNODES"
 
 srun --output=logs/%N-%j-%t.out bash -c "
     export NODE_RANK=\$SLURM_NODEID
+    mkdir -p '$HF_DATASETS_CACHE' '$MODELSCOPE_CACHE' '$MODELSCOPE_CACHE/lockers'
     cd scripts
     bash opd_baseline.sh '$STUDENT_MODEL' '$TEACHER_MODEL' '$DATA_SIZE' '$NUM_EPOCHS'
 "
