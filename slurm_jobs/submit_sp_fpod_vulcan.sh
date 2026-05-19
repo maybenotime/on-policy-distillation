@@ -68,7 +68,9 @@ export NCCL_NET=Socket
 # 8 ranks acquiring concurrently. Redirect HF dataset cache to per-node
 # /tmp (POSIX flock works).
 export HF_DATASETS_CACHE=/tmp/sya225_ds_cache_$SLURM_JOB_ID
-mkdir -p "$HF_DATASETS_CACHE"
+export MODELSCOPE_CACHE=/tmp/sya225_ms_cache_$SLURM_JOB_ID  # local-disk for swift.safe_ddp_context FileLock
+export HF_HUB_OFFLINE=1  # model is pre-cached, skip hub lookup that triggers safe_snapshot_download FileLock NFS race (Errno 37/116)
+mkdir -p "$HF_DATASETS_CACHE" "$MODELSCOPE_CACHE"
 # huggingface_hub model cache (~/scratch/sya225/hf_cache/huggingface/hub) is
 # also on a network FS that doesn't reliably support fcntl.flock + fstat.
 # 8 ranks doing simultaneous safe_snapshot_download lock acquire → Errno 116
