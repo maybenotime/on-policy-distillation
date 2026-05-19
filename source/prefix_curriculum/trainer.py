@@ -302,9 +302,11 @@ def _compute_top_k_entropy_weights(
     out = model(input_ids=input_ids, attention_mask=attn, use_cache=False)
     if was_training:
         model.train()
-    logits = out.logits.float()  # (B, L, V)
-    # Top-K logits → softmax → entropy
-    top_logits, _ = logits.topk(topk, dim=-1)  # (B, L, K)
+    # Cast only the top-K slice to fp32 — avoid materializing the full
+    # (B, L, V) fp32 tensor that would OOM on long-seq batches.
+    logits = out.logits  # bf16
+    top_logits, _ = logits.topk(topk, dim=-1)  # (B, L, K) bf16
+    top_logits = top_logits.float()
     top_probs = torch.softmax(top_logits, dim=-1)
     top_log_probs = torch.log_softmax(top_logits, dim=-1)
     ent_top = -(top_probs * top_log_probs).sum(-1)  # (B, L), in [0, log(K)]
@@ -312,8 +314,13 @@ def _compute_top_k_entropy_weights(
     log_K = math.log(topk)
     weights = torch.log1p(ent_top) / math.log1p(log_K)
     weights = weights.clamp_(min=0.0, max=1.0)
-    # Zero out weights at -100 label positions
-    weights = weights * (labels != -100).to(weights.dtype)
+    # NOTE: do NOT zero out by `(labels != -100)` here. weights are aligned
+    # to *logits* index space (weight[t] = entropy of logits[t] predicting
+    # token at t+1). The caller (_weighted_jsd_loss) filters by mask =
+    # (shifted_labels != -100), which already keeps exactly the right
+    # logits positions. A naive (labels != -100) zero-out would silently
+    # drop the prompt→first-response-token weight (because that logits
+    # position is at a non-response label index).
     return weights
 
 
@@ -352,7 +359,9 @@ def _weighted_jsd_loss(student_logits, teacher_logits=None, labels=None,
     t_flat = teacher_logits[mask]
     w_flat = weights[mask].to(s_flat.dtype)
     if s_flat.numel() == 0 or w_flat.sum() == 0:
-        return s_flat.new_zeros(())
+        # Keep the autograd graph alive so DDP backward doesn't desync
+        # when one rank has no valid positions but its peers do.
+        return student_logits.sum() * 0.0
 
     s_log_probs = F.log_softmax(s_flat, dim=-1)
     t_log_probs = F.log_softmax(t_flat, dim=-1)
@@ -399,12 +408,15 @@ def _apply_entropy_topk_mask(
     out = model(input_ids=input_ids, attention_mask=attn, use_cache=False)
     if was_training:
         model.train()
-    logits = out.logits  # (B, L, V)
-    # logits[:, t-1] predicts token at position t. Align to label index.
-    log_probs = torch.log_softmax(logits.float(), dim=-1)
-    # entropy at position t (predict t from t-1):  H_t = -sum_v p(v) log p(v)
+    # Cast only top-K logits to fp32 — full-V fp32 OOMs on long sequences.
+    # Truncated entropy over top-16 is monotonic with full-V entropy for
+    # rank-only purposes (which is what we need here).
+    logits = out.logits  # bf16
+    top_logits, _ = logits.topk(16, dim=-1)  # (B, L, 16)
+    top_logits = top_logits.float()
+    log_probs = torch.log_softmax(top_logits, dim=-1)
     probs = log_probs.exp()
-    ent_pred = -(probs * log_probs).sum(-1)  # (B, L)
+    ent_pred = -(probs * log_probs).sum(-1)  # (B, L) truncated entropy
     # ent_pred[:, t-1] is for predicting token t. We want ent at label-position t.
     ent = torch.zeros_like(ent_pred)
     ent[:, 1:] = ent_pred[:, :-1]
@@ -417,13 +429,14 @@ def _apply_entropy_topk_mask(
         if idx.numel() == 0:
             continue
         ent_valid = ent[i, idx]
-        k = max(_RESPONSE_MIN_LEN, int(frac * idx.numel()))
+        # Strict top-fraction. No min-length floor — short rollouts should
+        # honor the 20% semantics. (Original `_RESPONSE_MIN_LEN` floor would
+        # silently neutralize the ablation on responses <40 tokens.)
+        k = max(1, int(frac * idx.numel()))
         k = min(k, idx.numel())
-        # Indices (within idx) of the top-k entropy positions
         topk_local = torch.topk(ent_valid, k).indices
         keep_mask = torch.zeros_like(valid)
         keep_mask[idx[topk_local]] = True
-        # Mask everything outside top-k
         new_labels[i, ~keep_mask] = -100
     return new_labels
 

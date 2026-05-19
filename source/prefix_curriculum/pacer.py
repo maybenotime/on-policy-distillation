@@ -39,6 +39,11 @@ class PrefixPacer:
             # entropy_topk_frac: fraction of *highest-entropy* student tokens
             # whose KL we keep. Constant across stages by default.
             return max(0.0, min(1.0, self.ratio_0 + self.delta * self.stage))
+        if self.direction == 'entropy_reweight':
+            # ratio_0 = top-K integer used for entropy reweighting. Keep
+            # constant across stages — do NOT fall through to the backward
+            # `ratio_0 - delta * stage` formula (which would silently shrink K).
+            return self.ratio_0
         return max(0.0, self.ratio_0 - self.delta * self.stage)
 
     def stage_for_step(self, global_step: int, max_steps: int) -> int:
@@ -61,7 +66,7 @@ class PrefixPacer:
     def from_env(cls) -> 'PrefixPacer':
         """Build a pacer from PREFIX_* environment variables.
 
-        PREFIX_DIRECTION : 'forward' (default), 'backward', or 'entropy_topk'
+        PREFIX_DIRECTION : 'forward' (default), 'backward', 'entropy_topk', or 'entropy_reweight'
         PREFIX_K         : number of stages, default 10
         PREFIX_DELTA     : per-stage increment magnitude, default 0.1
         PREFIX_P0        : forward starting ratio, default 0.1
