@@ -57,10 +57,53 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
                 inputs['labels'] = _apply_entropy_topk_mask(
                     model, inputs, labels, frac,
                 )
+        elif self.prefix_pacer.direction == 'entropy_reweight':
+            # Compute top-K entropy weights now (extra no-grad student forward),
+            # stash for the overridden generalized_jsd_loss below.
+            labels = inputs.get('labels')
+            topk = int(self.prefix_pacer.current_ratio())
+            if isinstance(labels, torch.Tensor) and topk >= 2:
+                self._reweight_token_weights = _compute_top_k_entropy_weights(
+                    model, inputs, labels, topk=topk,
+                )
+            else:
+                self._reweight_token_weights = None
         return super().compute_loss(
             model, inputs,
             return_outputs=return_outputs,
             num_items_in_batch=num_items_in_batch,
+        )
+
+    def generalized_jsd_loss(self, student_logits, teacher_logits=None,
+                              labels=None, beta=0.5, temperature=1.0,
+                              chunk_size=512, topk=None,
+                              teacher_topk_logprobs=None, teacher_topk_indices=None):
+        """Override the staticmethod to inject entropy-reweighted reduction
+        when direction='entropy_reweight'. Otherwise fall back to the parent."""
+        if (self.prefix_pacer.direction == 'entropy_reweight'
+                and getattr(self, '_reweight_token_weights', None) is not None
+                and labels is not None):
+            return _weighted_jsd_loss(
+                student_logits=student_logits,
+                teacher_logits=teacher_logits,
+                labels=labels,
+                weights=self._reweight_token_weights,
+                beta=beta,
+                temperature=temperature,
+                topk=topk,
+                teacher_topk_logprobs=teacher_topk_logprobs,
+                teacher_topk_indices=teacher_topk_indices,
+            )
+        return GKDTrainer.generalized_jsd_loss(
+            student_logits=student_logits,
+            teacher_logits=teacher_logits,
+            labels=labels,
+            beta=beta,
+            temperature=temperature,
+            chunk_size=chunk_size,
+            topk=topk,
+            teacher_topk_logprobs=teacher_topk_logprobs,
+            teacher_topk_indices=teacher_topk_indices,
         )
 
     # ------------------------------------------------------------------
@@ -229,6 +272,106 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
 # ----------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------
+
+
+@torch.no_grad()
+def _compute_top_k_entropy_weights(
+    model,
+    inputs: dict,
+    labels: torch.Tensor,
+    topk: int = 16,
+) -> torch.Tensor:
+    """Per-token weight from top-K logits entropy → log → [0, 1].
+
+    Pipeline:
+      1. No-grad student forward to get logits.
+      2. Keep top-K logits per position, softmax over top-K.
+      3. Compute truncated entropy H_t ∈ [0, log(K)].
+      4. Weight w_t = log(1 + H_t) / log(1 + log(K)) — maps low-H → ~0,
+         high-H → 1, with sub-linear (log) compression in between.
+
+    Returns weights aligned to label positions (shape == labels.shape).
+    Invalid (label==-100) positions get weight 0 (so weighted sum ignores
+    them downstream).
+    """
+    import math
+    input_ids = inputs['input_ids']
+    attn = inputs.get('attention_mask')
+    was_training = model.training
+    model.eval()
+    out = model(input_ids=input_ids, attention_mask=attn, use_cache=False)
+    if was_training:
+        model.train()
+    logits = out.logits.float()  # (B, L, V)
+    # Top-K logits → softmax → entropy
+    top_logits, _ = logits.topk(topk, dim=-1)  # (B, L, K)
+    top_probs = torch.softmax(top_logits, dim=-1)
+    top_log_probs = torch.log_softmax(top_logits, dim=-1)
+    ent_top = -(top_probs * top_log_probs).sum(-1)  # (B, L), in [0, log(K)]
+    # Map to [0, 1] via log compression
+    log_K = math.log(topk)
+    weights = torch.log1p(ent_top) / math.log1p(log_K)
+    weights = weights.clamp_(min=0.0, max=1.0)
+    # Zero out weights at -100 label positions
+    weights = weights * (labels != -100).to(weights.dtype)
+    return weights
+
+
+def _weighted_jsd_loss(student_logits, teacher_logits=None, labels=None,
+                       weights=None, beta=0.5, temperature=1.0,
+                       topk=None, teacher_topk_logprobs=None,
+                       teacher_topk_indices=None):
+    """JSD/KL loss reduced by per-token weights instead of unweighted mean.
+
+    Mirrors `GKDTrainer.generalized_jsd_loss` but replaces the final
+    `total_loss / num_valid` with `sum(w_t * jsd_t) / sum(w_t)`. weights
+    must be shape (B, L) aligned with `labels` (caller supplies them after
+    any -100 zeroing).
+    """
+    import torch.nn.functional as F
+
+    if teacher_topk_logprobs is not None and teacher_topk_indices is not None:
+        s_scaled = student_logits / temperature
+        student_logits = torch.gather(s_scaled, dim=-1, index=teacher_topk_indices)
+        teacher_logits = teacher_topk_logprobs / temperature
+        del s_scaled
+        temperature = 1.0
+    elif topk is not None and teacher_logits is not None:
+        t_scaled = teacher_logits / temperature
+        s_scaled = student_logits / temperature
+        teacher_logits, topk_idx = torch.topk(t_scaled, k=topk, dim=-1)
+        student_logits = torch.gather(s_scaled, dim=-1, index=topk_idx)
+        del t_scaled, s_scaled, topk_idx
+        temperature = 1.0
+
+    student_logits = student_logits / temperature
+    teacher_logits = teacher_logits / temperature
+
+    mask = labels != -100
+    s_flat = student_logits[mask]
+    t_flat = teacher_logits[mask]
+    w_flat = weights[mask].to(s_flat.dtype)
+    if s_flat.numel() == 0 or w_flat.sum() == 0:
+        return s_flat.new_zeros(())
+
+    s_log_probs = F.log_softmax(s_flat, dim=-1)
+    t_log_probs = F.log_softmax(t_flat, dim=-1)
+
+    if beta == 0:
+        jsd_per = F.kl_div(s_log_probs, t_log_probs, reduction='none', log_target=True).sum(-1)
+    elif beta == 1:
+        jsd_per = F.kl_div(t_log_probs, s_log_probs, reduction='none', log_target=True).sum(-1)
+    else:
+        beta_t = torch.tensor(beta, dtype=s_log_probs.dtype, device=s_log_probs.device)
+        log_beta = torch.log(beta_t)
+        log_1mb = torch.log1p(-beta_t)
+        mix = torch.logsumexp(
+            torch.stack([s_log_probs + log_1mb, t_log_probs + log_beta]), dim=0)
+        kl_t = F.kl_div(mix, t_log_probs, reduction='none', log_target=True).sum(-1)
+        kl_s = F.kl_div(mix, s_log_probs, reduction='none', log_target=True).sum(-1)
+        jsd_per = beta_t * kl_t + (1 - beta_t) * kl_s
+
+    return (w_flat * jsd_per).sum() / w_flat.sum().clamp(min=1e-12)
 
 
 @torch.no_grad()

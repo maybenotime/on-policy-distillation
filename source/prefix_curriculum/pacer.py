@@ -22,8 +22,8 @@ import os
 class PrefixPacer:
 
     def __init__(self, direction: str, ratio_0: float, delta: float, num_stages: int):
-        if direction not in ('forward', 'backward', 'entropy_topk'):
-            raise ValueError(f"direction must be 'forward' / 'backward' / 'entropy_topk', got {direction!r}")
+        if direction not in ('forward', 'backward', 'entropy_topk', 'entropy_reweight'):
+            raise ValueError(f"direction must be 'forward' / 'backward' / 'entropy_topk' / 'entropy_reweight', got {direction!r}")
         if num_stages < 1:
             raise ValueError(f'num_stages must be >= 1, got {num_stages}')
         self.direction = direction
@@ -75,6 +75,9 @@ class PrefixPacer:
             ratio_0 = float(os.environ.get('PREFIX_P0', '0.1'))
         elif direction == 'entropy_topk':
             ratio_0 = float(os.environ.get('PREFIX_TOPK_FRAC', '0.2'))
+        elif direction == 'entropy_reweight':
+            # Top-K for the entropy reweighting computation (default top-16)
+            ratio_0 = float(os.environ.get('PREFIX_REWEIGHT_TOPK', '16'))
         else:
             ratio_0 = float(os.environ.get('PREFIX_Q0', '0.9'))
         return cls(direction, ratio_0, delta, num_stages)
