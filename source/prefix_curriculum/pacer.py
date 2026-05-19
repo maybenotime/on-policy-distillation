@@ -22,8 +22,8 @@ import os
 class PrefixPacer:
 
     def __init__(self, direction: str, ratio_0: float, delta: float, num_stages: int):
-        if direction not in ('forward', 'backward'):
-            raise ValueError(f"direction must be 'forward' or 'backward', got {direction!r}")
+        if direction not in ('forward', 'backward', 'entropy_topk'):
+            raise ValueError(f"direction must be 'forward' / 'backward' / 'entropy_topk', got {direction!r}")
         if num_stages < 1:
             raise ValueError(f'num_stages must be >= 1, got {num_stages}')
         self.direction = direction
@@ -35,6 +35,10 @@ class PrefixPacer:
     def current_ratio(self) -> float:
         if self.direction == 'forward':
             return min(1.0, self.ratio_0 + self.delta * self.stage)
+        if self.direction == 'entropy_topk':
+            # entropy_topk_frac: fraction of *highest-entropy* student tokens
+            # whose KL we keep. Constant across stages by default.
+            return max(0.0, min(1.0, self.ratio_0 + self.delta * self.stage))
         return max(0.0, self.ratio_0 - self.delta * self.stage)
 
     def stage_for_step(self, global_step: int, max_steps: int) -> int:
@@ -57,17 +61,20 @@ class PrefixPacer:
     def from_env(cls) -> 'PrefixPacer':
         """Build a pacer from PREFIX_* environment variables.
 
-        PREFIX_DIRECTION : 'forward' (default) or 'backward'
+        PREFIX_DIRECTION : 'forward' (default), 'backward', or 'entropy_topk'
         PREFIX_K         : number of stages, default 10
         PREFIX_DELTA     : per-stage increment magnitude, default 0.1
         PREFIX_P0        : forward starting ratio, default 0.1
         PREFIX_Q0        : backward starting ratio, default 0.9
+        PREFIX_TOPK_FRAC : entropy_topk fraction of high-H student tokens to keep, default 0.2
         """
         direction = os.environ.get('PREFIX_DIRECTION', 'forward').strip().lower()
         num_stages = int(os.environ.get('PREFIX_K', '10'))
         delta = float(os.environ.get('PREFIX_DELTA', '0.1'))
         if direction == 'forward':
             ratio_0 = float(os.environ.get('PREFIX_P0', '0.1'))
+        elif direction == 'entropy_topk':
+            ratio_0 = float(os.environ.get('PREFIX_TOPK_FRAC', '0.2'))
         else:
             ratio_0 = float(os.environ.get('PREFIX_Q0', '0.9'))
         return cls(direction, ratio_0, delta, num_stages)

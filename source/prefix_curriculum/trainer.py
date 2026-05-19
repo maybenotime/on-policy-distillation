@@ -50,6 +50,13 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
             ratio = self.prefix_pacer.current_ratio()
             if isinstance(labels, torch.Tensor) and ratio < 1.0:
                 inputs['labels'] = _apply_forward_prefix_mask(labels, ratio)
+        elif self.prefix_pacer.direction == 'entropy_topk':
+            labels = inputs.get('labels')
+            frac = self.prefix_pacer.current_ratio()
+            if isinstance(labels, torch.Tensor) and 0.0 < frac < 1.0:
+                inputs['labels'] = _apply_entropy_topk_mask(
+                    model, inputs, labels, frac,
+                )
         return super().compute_loss(
             model, inputs,
             return_outputs=return_outputs,
@@ -222,6 +229,60 @@ class PrefixCurriculumGKDTrainer(GKDTrainer):
 # ----------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------
+
+
+@torch.no_grad()
+def _apply_entropy_topk_mask(
+    model,
+    inputs: dict,
+    labels: torch.Tensor,
+    frac: float,
+) -> torch.Tensor:
+    """Keep only the top-`frac` highest-entropy response positions per row.
+
+    Approach: run a no-grad forward pass on the student to get next-token
+    distributions, compute per-position entropy on label-valid positions only,
+    and mask the bottom-(1-frac) positions to -100. The subsequent full
+    forward inside super().compute_loss() recomputes logits with grad enabled.
+
+    This adds ~1 extra student forward per step but avoids re-implementing
+    the upstream GKD loss surgery. The student model size (3B/0.5B) makes
+    this overhead acceptable.
+    """
+    input_ids = inputs['input_ids']
+    attn = inputs.get('attention_mask')
+    was_training = model.training
+    model.eval()
+    out = model(input_ids=input_ids, attention_mask=attn, use_cache=False)
+    if was_training:
+        model.train()
+    logits = out.logits  # (B, L, V)
+    # logits[:, t-1] predicts token at position t. Align to label index.
+    log_probs = torch.log_softmax(logits.float(), dim=-1)
+    # entropy at position t (predict t from t-1):  H_t = -sum_v p(v) log p(v)
+    probs = log_probs.exp()
+    ent_pred = -(probs * log_probs).sum(-1)  # (B, L)
+    # ent_pred[:, t-1] is for predicting token t. We want ent at label-position t.
+    ent = torch.zeros_like(ent_pred)
+    ent[:, 1:] = ent_pred[:, :-1]
+
+    new_labels = labels.clone()
+    B = labels.shape[0]
+    for i in range(B):
+        valid = labels[i] != -100
+        idx = valid.nonzero(as_tuple=False).squeeze(-1)
+        if idx.numel() == 0:
+            continue
+        ent_valid = ent[i, idx]
+        k = max(_RESPONSE_MIN_LEN, int(frac * idx.numel()))
+        k = min(k, idx.numel())
+        # Indices (within idx) of the top-k entropy positions
+        topk_local = torch.topk(ent_valid, k).indices
+        keep_mask = torch.zeros_like(valid)
+        keep_mask[idx[topk_local]] = True
+        # Mask everything outside top-k
+        new_labels[i, ~keep_mask] = -100
+    return new_labels
 
 
 @torch.no_grad()
