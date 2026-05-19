@@ -187,7 +187,12 @@ def main():
     import sys as _sys
     from pathlib import Path as _P
     _sys.path.insert(0, str(_P(__file__).parent))
-    import hmmt_adapter  # noqa: F401
+    try:
+        import hmmt_adapter  # noqa: F401
+    except ImportError as _e:
+        # hmmt_adapter.py is untracked on some clusters; skip silently so
+        # eval runs even without HMMT support.
+        print(f"[patch] hmmt_adapter not available: {_e}", flush=True)
     print(
         "[patch] dataset_hub=HF (amc forced to MODELSCOPE in loader.load), "
         "dataset_args=<HF overrides>, "

@@ -50,7 +50,7 @@ python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
     --eval_backend Native \
     --infer_backend vllm \
     --port "$EVAL_PORT" \
-    --eval_dataset ${EVAL_DATASETS:-gsm8k aime24 aime25 amc math_500 hmmt_feb_2026} \
+    --eval_dataset ${EVAL_DATASETS:-gsm8k aime24 aime25 amc math_500} \
     --eval_output_dir "${EVAL_OUTPUT_BASE:-/localscratch/sya225/eval_output}/${MODEL_TAG}" \
     --vllm_gpu_memory_utilization 0.8 \
     --vllm_max_model_len 16384 \
