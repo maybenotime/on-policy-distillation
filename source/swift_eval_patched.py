@@ -99,10 +99,15 @@ def _patch_msdataset_load():
                 if candidates:
                     arrow_file = candidates[0]
             if not os.path.exists(arrow_file):
-                raise FileNotFoundError(
+                # Fall back to the real modelscope download (works on hosts
+                # like fir that can reach modelscope.cn).
+                print(
                     f"[swift_eval_patched] local arrow file not found for "
-                    f"{dataset_name}/{split}: tried {arrow_file}"
+                    f"{dataset_name}/{split} (tried {arrow_file}); falling "
+                    f"back to MsDataset.load over the network.",
+                    flush=True,
                 )
+                return _orig_load(dataset_name=dataset_name, **kwargs)
             print(
                 f"[swift_eval_patched] MsDataset.load → local arrow: "
                 f"{arrow_file}",
@@ -119,6 +124,7 @@ def _patch_evalscope():
     from evalscope.constants import HubType
 
     _orig_init = evalscope.config.TaskConfig.__init__
+    pass_at_k = int(os.environ.get("PASS_AT_K", "0") or "0")
 
     def _patched_init(self, *args, **kwargs):
         if "dataset_hub" not in kwargs:
@@ -131,13 +137,21 @@ def _patch_evalscope():
             entry = da.setdefault(dataset_name, {})
             for k, v in override.items():
                 entry.setdefault(k, v)
-        # Keep amc on its modelscope dataset_id (`evalscope/amc_22-24`) — the
-        # per-benchmark data_source override would be ignored (data_source
-        # comes from TaskConfig.dataset_hub globally), so we instead force
-        # the modelscope path inside RemoteDataLoader.load via
-        # _patch_eval_loader below.
         amc_entry = da.setdefault("amc", {})
         amc_entry.setdefault("dataset_id", "evalscope/amc_22-24")
+        # pass@k mode: override aggregation per-dataset + set repeats/gen_config
+        if pass_at_k > 1:
+            for ds in ("gsm8k", "aime24", "aime25", "amc", "math_500"):
+                da.setdefault(ds, {})["aggregation"] = "mean_and_pass_at_k"
+            kwargs["repeats"] = pass_at_k
+            gc = kwargs.get("generation_config") or {}
+            if isinstance(gc, str):
+                import json
+                gc = json.loads(gc) if gc else {}
+            gc.setdefault("temperature", 0.7)
+            gc.setdefault("top_p", 0.95)
+            gc.setdefault("max_tokens", 4096)
+            kwargs["generation_config"] = gc
         kwargs["dataset_args"] = da
         _orig_init(self, *args, **kwargs)
 
@@ -169,6 +183,11 @@ def main():
     _patch_amc_adapter()
     _patch_msdataset_load()
     _patch_eval_loader()
+    # Import custom adapters so their @register_benchmark fires.
+    import sys as _sys
+    from pathlib import Path as _P
+    _sys.path.insert(0, str(_P(__file__).parent))
+    import hmmt_adapter  # noqa: F401
     print(
         "[patch] dataset_hub=HF (amc forced to MODELSCOPE in loader.load), "
         "dataset_args=<HF overrides>, "
