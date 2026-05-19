@@ -323,7 +323,7 @@ def run_analysis(
 
         # Reuse student completion ids directly (same vocab confirmed above)
         print(f"    Computing teacher log-probs for {teacher_name} …")
-        teacher_logps_list, _ = get_per_token_logps_and_entropy(
+        teacher_logps_list, teacher_entropy_list = get_per_token_logps_and_entropy(
             teacher_model,
             teacher_tokenizer,
             teacher_prompt_ids_list,
@@ -335,7 +335,7 @@ def run_analysis(
         # Per-token reward: log p_teacher(y_t) - log p_student(y_t)
         rewards_list = [t_logps - s_logps for s_logps, t_logps in zip(student_logps_list, teacher_logps_list)]
 
-        teacher_results[teacher_name] = rewards_list
+        teacher_results[teacher_name] = {"rewards": rewards_list, "entropy": teacher_entropy_list}
 
         del teacher_model
         torch.cuda.empty_cache()
@@ -356,7 +356,12 @@ def run_analysis(
             "student_entropy": student_entropy_list[i],  # shape: (T,)
             # Per-teacher rewards: log p_teacher - log p_student
             "teacher_rewards": {
-                teacher_name: teacher_results[teacher_name][i]
+                teacher_name: teacher_results[teacher_name]["rewards"][i]
+                for teacher_name in teacher_model_names
+            },
+            # Per-teacher entropy on student rollouts
+            "teacher_entropy": {
+                teacher_name: teacher_results[teacher_name]["entropy"][i]
                 for teacher_name in teacher_model_names
             },
             "is_correct": is_correct_list[i],  # bool or None if no answer provided
