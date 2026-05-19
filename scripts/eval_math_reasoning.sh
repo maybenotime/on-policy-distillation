@@ -38,13 +38,19 @@ fi
 # pre-downloading to MODELSCOPE_CACHE doesn't help. Stay on HF hub.
 # Patcher also monkey-patches AMCAdapter.record_to_sample to .get()
 # year/url since AI-MO/aimo-validation-amc lacks those fields.
+# Per-job unique port for internal vLLM server to avoid same-node collisions
+# (multiple bench jobs landing on the same compute node otherwise share port
+# 8000 and the OpenAI client hits the wrong server's model_list).
+EVAL_PORT="${EVAL_PORT:-$((20000 + (${SLURM_JOB_ID:-0} % 30000)))}"
+
 CUDA_VISIBLE_DEVICES=0 \
 python "$SCRIPT_DIR/../source/swift_eval_patched.py" \
     --use_hf true \
     $EVAL_ARGS \
     --eval_backend Native \
     --infer_backend vllm \
-    --eval_dataset gsm8k aime24 aime25 amc math_500 \
+    --port "$EVAL_PORT" \
+    --eval_dataset ${EVAL_DATASETS:-gsm8k aime24 aime25 amc math_500 hmmt_feb_2026} \
     --eval_output_dir "${EVAL_OUTPUT_BASE:-/localscratch/sya225/eval_output}/${MODEL_TAG}" \
     --vllm_gpu_memory_utilization 0.8 \
     --vllm_max_model_len 16384 \
