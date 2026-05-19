@@ -11,7 +11,6 @@
 #SBATCH --error=logs/rethink_gap/%x-%j.err
 #SBATCH --mail-user=cta156@sfu.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --exclude=fc10510,fc10404,fc10508
 
 # Chapter 5: LI-OPSD 3B — diagnostic-115 mix50_50 experiment.
 # Data: 2500 li_opsd_answer_first5k + 2500 diag-115 (upsampled) = 5000 records.
@@ -44,7 +43,7 @@ export DATA_SIZE=5000
 export SFT_ALPHA=0.0
 export LI_OPSD_RATIO=50
 export OUTPUT="${BASE}/output/li_opsd_3B_diagmix50_50_ratio50"
-export SLEEP_LEVEL=1
+export SLEEP_LEVEL=0
 export SAVE_STEPS=25
 export SAVE_TOTAL_LIMIT=13
 
