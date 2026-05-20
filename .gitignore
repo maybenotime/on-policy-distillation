@@ -3,3 +3,4 @@ scripts/wandb/
 slurm_jobs/logs
 test.tar.gz
 
+data/fmd_q2both_correct_7k.jsonl
