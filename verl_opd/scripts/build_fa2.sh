@@ -7,11 +7,11 @@
 # produced zero object files in 40 minutes.
 set -x
 export PATH=$HOME/.local/bin:$PATH
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
 export MAX_JOBS=12
 export NVCC_THREADS=2
-V=/home/sya225/opd/envs/verl_opd
-WORK=/localscratch/sya225/fa_build
+V=/home/USER/opd/envs/verl_opd
+WORK=/localscratch/USER/fa_build
 rm -rf "$WORK"; mkdir -p "$WORK"; cd "$WORK"
 
 echo "=== [1/4] fetch sdist $(date -Is) ==="

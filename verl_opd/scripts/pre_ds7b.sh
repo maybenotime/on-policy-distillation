@@ -1,6 +1,6 @@
 #!/bin/bash
 # 19 GPU 3: offline pre-probe of DeepSeek-R1-Distill-Qwen-7B as teacher for R1-Distill-1.5B, on the existing 1000 DAPO rollouts
-set -u; source /home/sya225/opd/scripts/topk_common.sh
+set -u; source /home/USER/opd/scripts/topk_common.sh
 S=$OPD_HOME/scripts; G=3; RT=ds15b-dapo; TEACHER=deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
 dump $G $RT $TEACHER preds_TDS7B
 met preds_TJustRL_student preds_TDS7B "pre ds1.5B vs DS7B"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # bash chain_dm.sh <TAG> <STUDENT> <TEACHER> <DATA_DIR> <GPUS e.g. 0,1,2> <RAY_TMPDIR>   (first two GPUs student, third teacher)
 # same recipe as the DAPO runs: k1 + PG (k1_probe), lr 1e-6, 16k responses, batch 64, ckpt every 50, stops at step 200.
-source /home/sya225/opd/env.sh none; S=/home/sya225/opd/scripts; export VERL_TEACHER_KEEP_SAMPLED=1
+source /home/USER/opd/env.sh none; S=/home/USER/opd/scripts; export VERL_TEACHER_KEEP_SAMPLED=1
 TAG=$1; STU=$2; TEA=$3; DD=$4; GPUS=$5; RAYD=$6
 echo "######## START $TAG data=$DD $(date -Is) ########"
 CUDA_VISIBLE_DEVICES=$GPUS RAY_TMPDIR=$RAYD \

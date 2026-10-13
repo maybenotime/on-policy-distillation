@@ -20,14 +20,14 @@ if ! command -v uv >/dev/null; then
 fi
 uv --version
 
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
 uv python install 3.12 2>&1 | tail -3
 
 PY=$(ls -d "$HOME"/.local/share/uv/python/cpython-3.12*-linux-x86_64-gnu 2>/dev/null | head -1)
 echo "installed interpreter: $PY"
 ls "$PY/include/python3.12/Python.h" || { echo "NO HEADERS"; exit 1; }
 
-for V in /home/sya225/opd/envs/verl_opd /home/sya225/opd/envs/code_eval_env /home/sya225/opd/envs/evalplus_env; do
+for V in /home/USER/opd/envs/verl_opd /home/USER/opd/envs/code_eval_env /home/USER/opd/envs/evalplus_env; do
     [ -d "$V" ] || continue
     for n in python python3 python3.12; do ln -sfn "$PY/bin/python3.12" "$V/bin/$n"; done
     python3 - "$V" "$PY" <<'PY'

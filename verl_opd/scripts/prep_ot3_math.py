@@ -19,7 +19,7 @@ def main():
     ap.add_argument("--pool", type=int, default=200000, help="math rows to collect before sampling")
     ap.add_argument("--max_scan", type=int, default=1300000)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out_dir", default="/home/sya225/opd/verl_data/ot3_math30k")
+    ap.add_argument("--out_dir", default="/home/USER/opd/verl_data/ot3_math30k")
     args = ap.parse_args()
 
     ds = datasets.load_dataset("open-thoughts/OpenThoughts3-1.2M", split="train", streaming=True)

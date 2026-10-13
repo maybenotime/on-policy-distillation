@@ -1,6 +1,6 @@
 import json,glob,sys,statistics as st
 import zstandard as zstd
-root='/home/sya225/opd/matharena/outputs'
+root='/home/USER/opd/matharena/outputs'
 comps=['aime/aime_2024_I','aime/aime_2024_II','aime/aime_2025','custom/amc','custom/beyondaime','hmmt/hmmt_feb_2025','hmmt/hmmt_feb_2026']
 def load(f):
     if f.endswith('.zst'):

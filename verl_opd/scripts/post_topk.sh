@@ -4,13 +4,13 @@
 # 1) 1000 rollouts from the post-OPD student (vLLM; killed by PID once the file is complete,
 #    because vLLM 0.27 can hang in EngineCore teardown), 2) top-k dumps of student and teacher
 #    on those rollouts, 3) overlap metrics.
-set -u; source /home/sya225/opd/scripts/topk_common.sh
+set -u; source /home/USER/opd/scripts/topk_common.sh
 TAG=$1; STUDENT=$2; TEACHER=$3; GPU=$4; P=$5; MU=${6:-0.85}
 R=$F/roll_$TAG.jsonl
 if [ ! -s "$R" ] || [ "$(wc -l < $R)" -lt 1000 ]; then
   echo "######## [$TAG] rollout gpu=$GPU util=$MU $(date -Is) ########"
   CUDA_VISIBLE_DEVICES=$GPU VLLM_LOGGING_LEVEL=WARNING "$E/bin/python" $OPD_HOME/scripts/fork_rollout.py \
-      --model "$STUDENT" --data ${ROLL_DATA:-/home/sya225/opd/verl_data/ot3_code30k/train.parquet} --n 1000 --seed 0 --max_tokens 4096 --gpu_mem_util $MU --out "$R" > $L/roll_$TAG.log 2>&1 &
+      --model "$STUDENT" --data ${ROLL_DATA:-/home/USER/opd/verl_data/ot3_code30k/train.parquet} --n 1000 --seed 0 --max_tokens 4096 --gpu_mem_util $MU --out "$R" > $L/roll_$TAG.log 2>&1 &
   RPID=$!
   while kill -0 $RPID 2>/dev/null; do
     sleep 30

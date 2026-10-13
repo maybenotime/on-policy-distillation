@@ -4,8 +4,8 @@
 # so the 8k window used for the short teachers would bind and drive the student
 # into non-terminating outputs (what happened with Math-1200 at 8k).
 set -u
-source /home/sya225/opd/env.sh none
-until grep -q "CHAIN_19_DONE" /home/sya225/logs/chain19.log 2>/dev/null; do sleep 120; done
+source /home/USER/opd/env.sh none
+until grep -q "CHAIN_19_DONE" /home/USER/logs/chain19.log 2>/dev/null; do sleep 120; done
 sleep 60
 sed -n '/^COMMON=/,/^}/p' $OPD_HOME/scripts/chain19.sh > /tmp/chain19_common.sh
 source /tmp/chain19_common.sh

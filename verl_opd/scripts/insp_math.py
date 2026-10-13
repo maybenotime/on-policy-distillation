@@ -1,5 +1,5 @@
 import pandas as pd, re, collections
-tr = pd.read_parquet('/home/sya225/opd/verl_data/ot3_math30k/train.parquet')
+tr = pd.read_parquet('/home/USER/opd/verl_data/ot3_math30k/train.parquet')
 P = tr['prompt'].apply(lambda p: p[0]['content']).astype(str).tolist()
 kw = {'latex $': r'\$', 'probability': r'probab', 'geometry': r'triangle|circle|angle|geometr|polygon', 'calculus': r'integral|derivative|\\int|limit', 'algebra/equation': r'equation|solve for|polynomial|factor', 'number theory': r'modulo|pmod|divisib|prime|remainder|gcd|lcm', 'combinatorics': r'how many ways|permutation|combination|arrange', 'sequence/series': r'sequence|series', 'word problem ($/people/time)': r'\$\d|dollar|hours|minutes|people|students|apples|price', 'complex/matrix/vector': r'complex number|matrix|vector', 'function': r'\bf\(x\)|function'}
 for k, v in kw.items():

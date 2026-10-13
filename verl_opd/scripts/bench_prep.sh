@@ -4,19 +4,19 @@
 # venv would downgrade protobuf 6.33->5.29 and risk breaking vllm there),
 # and confirm the LiveCodeBench v6 problem count.
 set -x
-export HF_HOME=/localscratch/sya225/hf_cache
-mkdir -p /home/sya225/opd/bench
+export HF_HOME=/localscratch/USER/hf_cache
+mkdir -p /home/USER/opd/bench
 
-/home/sya225/opd/envs/evalplus_env/bin/python - <<'PY'
+/home/USER/opd/envs/evalplus_env/bin/python - <<'PY'
 import json
 from evalplus.data import get_human_eval_plus
 p = get_human_eval_plus()
 out = {k: {"prompt": v["prompt"], "entry_point": v["entry_point"]} for k, v in p.items()}
-json.dump(out, open("/home/sya225/opd/bench/humanevalplus_problems.json", "w"))
+json.dump(out, open("/home/USER/opd/bench/humanevalplus_problems.json", "w"))
 print("HumanEval+ exported:", len(out))
 PY
 
-cd /home/sya225/opd/LiveCodeBench
+cd /home/USER/opd/LiveCodeBench
 .venv/bin/python - <<'PY'
 from lcb_runner.benchmarks.code_generation import load_code_generation_dataset
 d = load_code_generation_dataset(release_version="release_v6", start_date="2025-01-01")

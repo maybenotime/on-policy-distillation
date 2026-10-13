@@ -1,7 +1,7 @@
 #!/bin/bash
 # 05 (job 264439, 3 GPUs): Math-1200 16k from scratch, 2 student + 1 teacher on GPUs 0,1,2.
-source /home/sya225/opd/env.sh none
-sed -n '/^COMMON=(/,/^}/p' /home/sya225/opd/scripts/chain05.sh > /tmp/chain05_common.sh
+source /home/USER/opd/env.sh none
+sed -n '/^COMMON=(/,/^}/p' /home/USER/opd/scripts/chain05.sh > /tmp/chain05_common.sh
 source /tmp/chain05_common.sh
 COMMON+=(MAX_RESPONSE_LENGTH=16384 PPO_MAX_TOKEN_LEN_PER_GPU=24576)
 rm -rf $SCRATCH/checkpoints/opd_code_17b_fromK4Bmath1200_16k /tmp/ray_K4Bmath1200_16k

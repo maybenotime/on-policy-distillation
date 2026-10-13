@@ -1,10 +1,10 @@
-# Portable OPD environment (cs-venus-*). Source this first on any node.
+# Portable OPD environment (node-*). Source this first on any node.
 # Code / venvs / data live under $OPD_HOME (shared /home); only node-local
 # state -- model cache, checkpoints, logs -- goes to $SCRATCH.
-#   source /home/sya225/opd/env.sh          # + activates the training venv
-#   source /home/sya225/opd/env.sh none     # env vars only
-export OPD_HOME=/home/sya225/opd
-export SCRATCH=/localscratch/sya225
+#   source /home/USER/opd/env.sh          # + activates the training venv
+#   source /home/USER/opd/env.sh none     # env vars only
+export OPD_HOME=/home/USER/opd
+export SCRATCH=/localscratch/USER
 export VERL_VENV=$OPD_HOME/envs/verl_opd
 export VERL_REPO=$OPD_HOME/verl_repo
 export CODE_EVAL_ENV=$OPD_HOME/envs/code_eval_env

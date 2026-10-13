@@ -1,12 +1,12 @@
-# verl_opd — entropy-shape / teacher-selection OPD experiments (verl 0.9.0, SFU Solar)
+# verl_opd — entropy-shape / teacher-selection OPD experiments (verl 0.9.0)
 
 Code behind the "shape of uncertainty" OPD experiments: k1+PG on-policy distillation in verl with per-step
 entropy-shape probes (ESC ρ, Overlap@16, ΔH, ForkOverlap), the entropy-shape transplant (synthetic teacher
 A ⊕ shape(B)), correctness-controlled subsets, teacher-outcome prediction, and the paper figures.
-Everything ran on SFU Solar `cs-venus-05` / `cs-venus-19` (Blackwell L40S-class, 96 GB); paths are
-cluster-specific (`/home/sya225/opd`, `/localscratch/sya225`) and are set in `env.sh`.
+Everything ran on two SLURM GPU nodes (`node-A`, `node-B`; Blackwell-class, 96 GB); paths are
+cluster-specific (`/home/USER/opd`, `/localscratch/USER`) and are set in `env.sh`.
 
-Layout (mirrors the on-cluster tree `/home/sya225/opd/`):
+Layout (mirrors the on-cluster tree `/home/USER/opd/`):
 
 | dir | what |
 |---|---|

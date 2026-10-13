@@ -1,6 +1,6 @@
 """Partial MathArena aggregation: per-model, per-competition accuracy over finished problems (n samples each)."""
 import glob, json, os, sys, zstandard as zstd, io
-R = "/home/sya225/opd/matharena/outputs"
+R = "/home/USER/opd/matharena/outputs"
 comps = ["aime/aime_2024_I", "aime/aime_2024_II", "aime/aime_2025", "custom/amc", "custom/beyondaime", "hmmt/hmmt_feb_2025", "hmmt/hmmt_feb_2026", "custom/math500"]
 models = sys.argv[1:]
 def load(p):

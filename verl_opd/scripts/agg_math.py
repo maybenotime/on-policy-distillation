@@ -3,7 +3,7 @@ problems) per competition per model. Each <problem>.json.zst already carries the
 graded `pass_at_1` and the per-sample `correct` list."""
 import glob, json, os, zstandard
 
-ROOT = "/home/sya225/opd/matharena/outputs"
+ROOT = "/home/USER/opd/matharena/outputs"
 MODELS = ["qwen3_8b", "qwen3_4b", "opd_4b", "qwen3_1p7b", "opd_1p7b", "opd_1p7b_from14b", "opd_1.7b_from4b", "opd_1.7b_fromRLCR4B", "opd_1.7b_fromK4Bcode1200", "opd_1.7b_fromK4Bcode300_16k"]
 COMPS = [("aime", "aime_2024_I"), ("aime", "aime_2024_II"), ("aime", "aime_2025"),
          ("hmmt", "hmmt_feb_2025"), ("hmmt", "hmmt_feb_2026"),

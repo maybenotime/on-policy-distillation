@@ -10,7 +10,7 @@ difference is the size of the extraction artefact, with sampling noise removed.
 """
 import json, re, sys, pathlib
 
-O = pathlib.Path("/home/sya225/opd/bench/official")
+O = pathlib.Path("/home/USER/opd/bench/official")
 MARK = ("def ", "class ", "input(", "sys.stdin", "import ")
 
 def blocks(txt):

@@ -1,7 +1,7 @@
 #!/bin/bash
-# cs-venus-05: pre-probes of three teachers vs R1-Distill-1.5B on the existing 1000 DAPO rollouts (roll_ds15b-dapo.jsonl).
+# node-A: pre-probes of three teachers vs R1-Distill-1.5B on the existing 1000 DAPO rollouts (roll_ds15b-dapo.jsonl).
 #   qihoo360/Light-R1-7B-DS, nvidia/Nemotron-Research-Reasoning-Qwen-1.5B@brorl, agentica-org/DeepScaleR-1.5B-Preview
-set -u; source /home/sya225/opd/scripts/topk_common.sh; S=$OPD_HOME/scripts; RT=ds15b-dapo
+set -u; source /home/USER/opd/scripts/topk_common.sh; S=$OPD_HOME/scripts; RT=ds15b-dapo
 STU=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
 echo "PRE05_START $(hostname) $(date -Is)"
 # 1) downloads (Nemotron: brorl branch -> local snapshot path)

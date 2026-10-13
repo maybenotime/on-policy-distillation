@@ -2,7 +2,7 @@
 # 19 GPU 3 (training on 0-2): MathArena evals of the k3 Base-student run at key steps, sequential.
 # Order: 271 (final) -> 200 (after the rho jump) -> 150 (plateau, before the jump) -> 50 (finish) -> Qwen3-1.7B-Base (finish).
 # 5 comps (no math500, no HMMT: Base-family students score ~0 there and loop to 16k); matharena skips finished problems.
-source /home/sya225/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
+source /home/USER/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
 export MAX_TOKENS=16384 CONCURRENCY=100 GPU_UTIL=0.9 MATH_ONLY=1 MAX_MODEL_LEN=32768
 export COMPS="aime/aime_2024_I aime/aime_2024_II aime/aime_2025 custom/amc custom/beyondaime"
 CK=$SCRATCH/checkpoints/opd_q3b17_fromQ3B4Bgrpo_dapo_16k_k3; BASE=Qwen/Qwen3-1.7B-Base

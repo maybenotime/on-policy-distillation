@@ -13,35 +13,35 @@
 set -x
 CFG=$1; MODEL=$2; TAG=$3; PORT=$4; GPU=$5; TP=${6:-1}
 export CUDA_VISIBLE_DEVICES=$GPU
-E=/home/sya225/opd/envs/code_eval_env
-R=/home/sya225/opd/matharena
+E=/home/USER/opd/envs/code_eval_env
+R=/home/USER/opd/matharena
 export PATH="$E/bin:$PATH"
-export HF_HOME=/localscratch/sya225/hf_cache
+export HF_HOME=/localscratch/USER/hf_cache
 export VLLM_API_KEY=dummy
-export PYTHONPATH=/home/sya225/opd/LiveCodeBench
-OUT=/home/sya225/opd/bench/official
+export PYTHONPATH=/home/USER/opd/LiveCodeBench
+OUT=/home/USER/opd/bench/official
 mkdir -p "$OUT"
 
 SAMP="--temperature 0.7 --top_p 0.8 --top_k 20 --min_p 0.0 --n 4 --max_tokens 32768"
 
 # ---------- code ----------
-export HF_DATASETS_CACHE=/localscratch/sya225/hf_cache/datasets
-cd /home/sya225/opd/LiveCodeBench
+export HF_DATASETS_CACHE=/localscratch/USER/hf_cache/datasets
+cd /home/USER/opd/LiveCodeBench
 for BENCH in humanevalplus lcb_v6; do
   echo "######## [$TAG] CODE $BENCH $(date -Is) ########"
-  "$E/bin/python" /home/sya225/opd/scripts/gen2.py --model "$MODEL" --bench "$BENCH" \
+  "$E/bin/python" /home/USER/opd/scripts/gen2.py --model "$MODEL" --bench "$BENCH" \
       --out_dir "$OUT" --tag "$TAG" $SAMP --tp "$TP" --gpu_mem_util 0.85 \
       2>&1 | grep -aE "\[gen\]|rror|Traceback" | tail -6
 done
 
 # ---------- math ----------
-export HF_DATASETS_CACHE=/localscratch/sya225/hf_cache/datasets
+export HF_DATASETS_CACHE=/localscratch/USER/hf_cache/datasets
 echo "######## [$TAG] serving on :$PORT $(date -Is) ########"
 "$E/bin/python" -m vllm.entrypoints.openai.api_server \
     --model "$MODEL" --served-model-name "$MODEL" \
     --port "$PORT" --tensor-parallel-size "$TP" --dtype bfloat16 --gpu-memory-utilization 0.85 \
     --max-model-len 40960 --enforce-eager --api-key dummy \
-    > /localscratch/sya225/logs/vllm_${CFG}.log 2>&1 &
+    > /localscratch/USER/logs/vllm_${CFG}.log 2>&1 &
 PID=$!
 for i in $(seq 1 120); do
     curl -s -H "Authorization: Bearer dummy" "http://localhost:$PORT/v1/models" >/dev/null 2>&1 && break

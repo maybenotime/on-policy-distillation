@@ -2,11 +2,11 @@
 # LCB v6 scoring. lcb_runner is NOT installed into the venv: it is imported from
 # the repo checkout, and it also reads its few-shot data relative to cwd, so both
 # PYTHONPATH and cd are required (this is what the earlier attempt was missing).
-E=/home/sya225/opd/envs/code_eval_env
-export PATH="$E/bin:$PATH" HF_HOME=/localscratch/sya225/hf_cache
-export PYTHONPATH=/home/sya225/opd/LiveCodeBench
-cd /home/sya225/opd/LiveCodeBench || exit 1
-O=/home/sya225/opd/bench/official
+E=/home/USER/opd/envs/code_eval_env
+export PATH="$E/bin:$PATH" HF_HOME=/localscratch/USER/hf_cache
+export PYTHONPATH=/home/USER/opd/LiveCodeBench
+cd /home/USER/opd/LiveCodeBench || exit 1
+O=/home/USER/opd/bench/official
 rm -f "$O"/*_output_eval.json "$O"/*_codegeneration_output_eval.json
 for T in Qwen3-8B Qwen3-4B Qwen3-1.7B opd-4b opd-1.7b; do
   echo "######## LCB v6 : $T ########"

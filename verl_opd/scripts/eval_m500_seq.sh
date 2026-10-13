@@ -1,7 +1,7 @@
 #!/bin/bash
 # 19 GPU 0 only: MathArena (7 comps, 8k, n=4) evals of the Qwen3-1.7B <- Math-Step500 student, step 200 then step 50.
-until grep -q "math500 training stopped" /home/sya225/logs/stop_m500_200.log 2>/dev/null; do sleep 60; done; sleep 60
-source /home/sya225/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
+until grep -q "math500 training stopped" /home/USER/logs/stop_m500_200.log 2>/dev/null; do sleep 60; done; sleep 60
+source /home/USER/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
 export MAX_TOKENS=8192 CONCURRENCY=100 GPU_UTIL=0.9 MATH_ONLY=1
 export COMPS="aime/aime_2024_I aime/aime_2024_II aime/aime_2025 custom/amc custom/beyondaime hmmt/hmmt_feb_2025 hmmt/hmmt_feb_2026"
 CK=$SCRATCH/checkpoints/opd_q3i17_fromK4Bmath500_dapo_16k; BASE=Qwen/Qwen3-1.7B

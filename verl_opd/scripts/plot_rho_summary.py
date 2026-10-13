@@ -36,5 +36,5 @@ for ax, (name, tf, tag, gain) in zip(axes, RUNS):
 axes[0].set_ylabel("rollouts (of 1000)", fontsize=9.5)
 fig.suptitle("How far OPD moves the student's entropy shape toward the teacher — R1-Distill-1.5B on DAPO-Math", fontsize=12)
 fig.tight_layout(rect=[0, 0, 1, 0.92])
-fig.savefig("/localhome/sya225/Projects/opd_experiments/results/entropy_shape_ds15b_summary.png", dpi=160)
+fig.savefig("/localhome/USER/Projects/opd_experiments/results/entropy_shape_ds15b_summary.png", dpi=160)
 print("saved summary")

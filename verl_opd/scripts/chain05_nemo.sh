@@ -1,13 +1,13 @@
 #!/bin/bash
-# job 269604 (cs-venus-05): OPD  student DeepSeek-R1-Distill-Qwen-1.5B <- teacher $(ls -d /localscratch/sya225/hf_cache/hub/models--nvidia--Nemotron-Research-Reasoning-Qwen-1.5B/snapshots/*/ | head -1)
+# job 269604 (node-A): OPD  student DeepSeek-R1-Distill-Qwen-1.5B <- teacher $(ls -d /localscratch/USER/hf_cache/hub/models--nvidia--Nemotron-Research-Reasoning-Qwen-1.5B/snapshots/*/ | head -1)
 # DAPO-Math-17k, k1 + PG (k1_probe plugin), lr 1e-6, 16k responses, ckpt every 50, stops by itself at step 200.
 # GPUs 0,1,2 (first two = student, third = teacher).
-source /home/sya225/opd/env.sh none; S=/home/sya225/opd/scripts; export VERL_TEACHER_KEEP_SAMPLED=1 RAY_worker_register_timeout_seconds=600
-TAG=ds15b_fromNemoBroRL_dapo_16k; TEACHER="$(ls -d /localscratch/sya225/hf_cache/hub/models--nvidia--Nemotron-Research-Reasoning-Qwen-1.5B/snapshots/*/ | head -1)"; TEACHER=${TEACHER%/}
+source /home/USER/opd/env.sh none; S=/home/USER/opd/scripts; export VERL_TEACHER_KEEP_SAMPLED=1 RAY_worker_register_timeout_seconds=600
+TAG=ds15b_fromNemoBroRL_dapo_16k; TEACHER="$(ls -d /localscratch/USER/hf_cache/hub/models--nvidia--Nemotron-Research-Reasoning-Qwen-1.5B/snapshots/*/ | head -1)"; TEACHER=${TEACHER%/}
 echo "######## START $TAG $(date -Is) ########"
 CUDA_VISIBLE_DEVICES=0,1,2 RAY_TMPDIR=/tmp/ray_nemo \
 env STUDENT_MODEL=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B TEACHER_MODEL="$TEACHER" \
-    DATA_DIR=/home/sya225/opd/verl_data/dapo_math17k \
+    DATA_DIR=/home/USER/opd/verl_data/dapo_math17k \
     TRAIN_BATCH_SIZE=64 PPO_MINI_BATCH_SIZE=64 ROLLOUT_N=1 ACTOR_LR=1e-6 MAX_PROMPT_LENGTH=1024 \
     MAX_RESPONSE_LENGTH=16384 PPO_MAX_TOKEN_LEN_PER_GPU=24576 \
     DISTILLATION_LOSS_MODE=k1_probe USE_POLICY_GRADIENT=True DISTILLATION_TOPK=64 SAVE_FREQ=50 HF_HUB_OFFLINE=1 \

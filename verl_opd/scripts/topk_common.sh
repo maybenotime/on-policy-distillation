@@ -1,5 +1,5 @@
 # shared by topk19.sh / topk05.sh
-source /home/sya225/opd/env.sh none
+source /home/USER/opd/env.sh none
 E=$CODE_EVAL_ENV; F=$OPD_HOME/fork; D=$SCRATCH/fork_topk; L=$SCRATCH/logs; mkdir -p $D
 export PATH="$E/bin:$PATH" TOKENIZERS_PARALLELISM=false
 dump () {  # gpu roll_tag model out_name

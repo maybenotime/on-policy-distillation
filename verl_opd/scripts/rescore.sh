@@ -3,9 +3,9 @@
 # evalplus caches into <samples>_eval_results.json and silently reuses it, which
 # is why the first re-run returned byte-identical scores despite new samples.
 set -x
-E=/home/sya225/opd/envs/code_eval_env
-export PATH="$E/bin:$PATH" HF_HOME=/localscratch/sya225/hf_cache
-O=/home/sya225/opd/bench/sampled
+E=/home/USER/opd/envs/code_eval_env
+export PATH="$E/bin:$PATH" HF_HOME=/localscratch/USER/hf_cache
+O=/home/USER/opd/bench/sampled
 rm -f "$O"/humanevalplus_*_eval_results.json
 for T in Qwen3-8B Qwen3-4B opd30k-step424; do
   echo "==== HumanEval+ (n=4 avg) : $T ===="

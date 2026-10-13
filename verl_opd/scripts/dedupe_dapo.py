@@ -1,5 +1,5 @@
 import pandas as pd
-out = "/home/sya225/opd/verl_data/dapo_math17k"
+out = "/home/USER/opd/verl_data/dapo_math17k"
 for name in ["train", "test"]:
     df = pd.read_parquet(f"{out}/{name}.parquet")
     key = df["prompt"].apply(lambda p: p[0]["content"])

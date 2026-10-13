@@ -9,7 +9,7 @@ inert. Returning a constant keeps the agent-loop reward path alive without
 pretending to grade anything.
 
 Wire it up with:
-  reward.custom_reward_function.path=/home/sya225/opd/scripts/zero_reward.py
+  reward.custom_reward_function.path=/home/USER/opd/scripts/zero_reward.py
   reward.custom_reward_function.name=compute_score
 """
 

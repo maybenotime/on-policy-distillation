@@ -69,7 +69,7 @@ def build_lcb(release, start_date):
 
 
 def build_humanevalplus():
-    probs = json.load(open("/home/sya225/opd/bench/humanevalplus_problems.json"))
+    probs = json.load(open("/home/USER/opd/bench/humanevalplus_problems.json"))
     instr = ("Complete the following Python function. Return the COMPLETE function "
              "implementation inside a single ```python code block. No tests, no explanations.")
     return [{"key": tid,

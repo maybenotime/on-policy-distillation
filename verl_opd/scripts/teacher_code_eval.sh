@@ -5,7 +5,7 @@
 # so the numbers are directly comparable with the OPD students. Skips generation if
 # outputs exist; always (re)scores, and scores the _fix extraction for base models too.
 set -u
-source /home/sya225/opd/env.sh none
+source /home/USER/opd/env.sh none
 TAG=$1; MODEL=$2; GPU=$3
 E=$CODE_EVAL_ENV; O=$OPD_HOME/bench/official
 export CUDA_VISIBLE_DEVICES=$GPU PATH="$E/bin:$PATH" PYTHONPATH=$OPD_HOME/LiveCodeBench

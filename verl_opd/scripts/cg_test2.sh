@@ -4,8 +4,8 @@
 # so we disabled graphs wholesale with enforce_eager. That was blunt: this
 # measures the middle ground on the standalone server path.
 set -x
-E=/home/sya225/opd/envs/code_eval_env
-export PATH="$E/bin:$PATH" HF_HOME=/localscratch/sya225/hf_cache
+E=/home/USER/opd/envs/code_eval_env
+export PATH="$E/bin:$PATH" HF_HOME=/localscratch/USER/hf_cache
 M=Qwen/Qwen3-1.7B
 
 bench () {  # $1=label $2=gpu $3=port  $4...=extra flags
@@ -13,7 +13,7 @@ bench () {  # $1=label $2=gpu $3=port  $4...=extra flags
   CUDA_VISIBLE_DEVICES=$gpu "$E/bin/python" -m vllm.entrypoints.openai.api_server \
       --model $M --served-model-name $M --port $port --dtype bfloat16 \
       --gpu-memory-utilization 0.85 --max-model-len 40960 --api-key dummy "$@" \
-      > /localscratch/sya225/logs/cg_${label}.log 2>&1 &
+      > /localscratch/USER/logs/cg_${label}.log 2>&1 &
   local pid=$! t0=$(date +%s)
   for i in $(seq 1 90); do
       curl -s -H "Authorization: Bearer dummy" http://localhost:$port/v1/models >/dev/null 2>&1 && break

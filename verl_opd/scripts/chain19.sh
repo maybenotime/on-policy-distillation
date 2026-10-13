@@ -1,8 +1,8 @@
 #!/bin/bash
-# cs-venus-19 chain: Qwen3-1.7B <- Code-Step300, then <- RLCR, on GPUs 0,1,2
+# node-B chain: Qwen3-1.7B <- Code-Step300, then <- RLCR, on GPUs 0,1,2
 # (2 actor + 1 teacher). GPU 3 stays free for merge/eval. Same recipe as chain_teachers.sh.
 set -u
-source /home/sya225/opd/env.sh none
+source /home/USER/opd/env.sh none
 COMMON=(
   STUDENT_MODEL=Qwen/Qwen3-1.7B
   DATA_DIR=$OPD_HOME/verl_data/ot3_code30k

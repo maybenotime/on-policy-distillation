@@ -4,7 +4,7 @@ usage: deepmath_to_verl.py --src both_wrong_7333.jsonl --n 7000 --seed 0 --out v
 import argparse, json, os, shutil, numpy as np, pandas as pd
 ap = argparse.ArgumentParser()
 ap.add_argument("--src", required=True); ap.add_argument("--n", type=int, default=7000); ap.add_argument("--seed", type=int, default=0)
-ap.add_argument("--out", required=True); ap.add_argument("--test_from", default="/home/sya225/opd/verl_data/dapo_math17k/test.parquet")
+ap.add_argument("--out", required=True); ap.add_argument("--test_from", default="/home/USER/opd/verl_data/dapo_math17k/test.parquet")
 a = ap.parse_args()
 PREFIX = ("Solve the following math problem step by step. The last line of your response should be of the form "
           "Answer: $Answer (without quotes) where $Answer is the answer to the problem.\n\n")

@@ -1,6 +1,6 @@
 #!/bin/bash
 # 19 GPU 3: pre-OPD top-k dumps for the two RL-code teachers on the base-1.7B rollouts.
-set -u; source /home/sya225/opd/scripts/topk_common.sh
+set -u; source /home/USER/opd/scripts/topk_common.sh
 dump 3 Qwen3-1.7B Keven16/Qwen3-4B-Non-Thinking-RL-Code-Step300  pre_TK4Bcode300
 dump 3 Qwen3-1.7B Keven16/Qwen3-4B-Non-Thinking-RL-Code-Step1200 pre_TK4Bcode1200
 echo "==== metrics (19c) ===="

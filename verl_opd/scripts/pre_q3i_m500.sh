@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPU 0, after the 8B evals: offline pre-probe of Keven16 Math-Step500 as teacher for Qwen3-1.7B on the 1000 DAPO rollouts
-until grep -q "EVAL_Q8B_DONE" /home/sya225/logs/evq8b.log 2>/dev/null; do sleep 120; done
-set -u; source /home/sya225/opd/scripts/topk_common.sh
+until grep -q "EVAL_Q8B_DONE" /home/USER/logs/evq8b.log 2>/dev/null; do sleep 120; done
+set -u; source /home/USER/opd/scripts/topk_common.sh
 S=$OPD_HOME/scripts; G=0; RT=q3i17-dapo; TEACHER=Keven16/Qwen3-4B-Non-Thinking-RL-Math-Step500
 dump $G $RT $TEACHER preq3i_TK4Bmath500
 met preq3i_TQ3B4Bgrpo_student preq3i_TK4Bmath500 "pre Q3-1.7B vs Math500 (dapo)"

@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 ap = argparse.ArgumentParser(); ap.add_argument("--model", required=True); ap.add_argument("--n", type=int, default=48)
 ap.add_argument("--max_tokens", type=int, default=16384); ap.add_argument("--util", type=float, default=0.3); ap.add_argument("--out", required=True)
 a = ap.parse_args()
-df = pd.read_parquet("/home/sya225/opd/verl_data/ot3_math30k/train.parquet").sample(n=a.n, random_state=1)
+df = pd.read_parquet("/home/USER/opd/verl_data/ot3_math30k/train.parquet").sample(n=a.n, random_state=1)
 tok = AutoTokenizer.from_pretrained(a.model)
 prompts = [tok.apply_chat_template([dict(m) for m in r], tokenize=False, add_generation_prompt=True, enable_thinking=False) for r in df["prompt"]]
 llm = LLM(model=a.model, gpu_memory_utilization=a.util, max_model_len=a.max_tokens + 1024, enable_prefix_caching=False)

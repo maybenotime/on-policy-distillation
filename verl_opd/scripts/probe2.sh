@@ -1,5 +1,5 @@
 #!/bin/bash
-V=/home/sya225/opd/envs/verl_opd
+V=/home/USER/opd/envs/verl_opd
 P=$("$V/bin/python" -c "import verl,pathlib;print(pathlib.Path(verl.__file__).parent)")
 echo "########## trainer/distillation/ ##########"; ls "$P/trainer/distillation/"
 echo; echo "########## distillation.yaml ##########"; cat "$P/trainer/config/distillation/distillation.yaml"

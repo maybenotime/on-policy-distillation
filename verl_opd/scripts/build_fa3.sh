@@ -11,12 +11,12 @@
 # sdist uv already unpacked into its cache.
 set -x
 export PATH=$HOME/.local/bin:$PATH
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
 export MAX_JOBS=12
 export NVCC_THREADS=2
-V=/home/sya225/opd/envs/verl_opd
-SRC_CACHE=$(ls -d /localscratch/sya225/uv_cache/sdists-v9/pypi/flash-attn/2.8.3.post1/*/src 2>/dev/null | head -1)
-WORK=/localscratch/sya225/fa_build
+V=/home/USER/opd/envs/verl_opd
+SRC_CACHE=$(ls -d /localscratch/USER/uv_cache/sdists-v9/pypi/flash-attn/2.8.3.post1/*/src 2>/dev/null | head -1)
+WORK=/localscratch/USER/fa_build
 
 echo "=== [1/4] stage source from uv cache: $SRC_CACHE  $(date -Is) ==="
 [ -d "$SRC_CACHE" ] || { echo "NO_CACHED_SDIST"; exit 1; }

@@ -1,5 +1,5 @@
 import re, io
-G='/home/sya225/opd/matharena/src/matharena/grader.py'
+G='/home/USER/opd/matharena/src/matharena/grader.py'
 s=open(G).read()
 assert 'def _extract_and_grade_impl' not in s
 s=s.replace('def extract_and_grade(messages, output_tokens, gold_answer, competition_config, problem=None, debug_info=""):',
@@ -42,7 +42,7 @@ def extract_and_grade(messages, output_tokens, gold_answer, competition_config, 
 
 def _extract_and_grade_impl(messages, output_tokens, gold_answer, competition_config, problem=None, debug_info=""):''',1)
 open(G,'w').write(s)
-R='/home/sya225/opd/matharena/scripts/run.py'
+R='/home/USER/opd/matharena/scripts/run.py'
 r=open(R).read()
 assert 'RLIMIT_AS' not in r
 r=r.replace('import argparse\n','import argparse\nimport os, resource\n_cap = int(os.environ.get("MATHARENA_MEM_GB", "64")) << 30   # 2026-09-17: cap the grader process; a runaway parse must not take the node down\ntry:\n    resource.setrlimit(resource.RLIMIT_AS, (_cap, _cap))\nexcept Exception as _e:\n    print("RLIMIT_AS not set:", _e)\n',1)

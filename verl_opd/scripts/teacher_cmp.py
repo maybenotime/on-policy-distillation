@@ -1,7 +1,7 @@
 """Paired teacher comparison against a fixed student rollout set.
 All teachers are scored at identical token positions, so this pairs exactly."""
 import numpy as np, itertools
-D = "/home/sya225/opd/fork/"
+D = "/home/USER/opd/fork/"
 S = np.load(D + "ent_student_Qwen3-1.7B.npz")
 T = {"4B": np.load(D + "ent_T4B_Qwen3-1.7B.npz"),
      "8B": np.load(D + "ent_teacher_Qwen3-1.7B.npz"),

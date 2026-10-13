@@ -1,7 +1,7 @@
 """Fetch DAPO-Math-17k (train) and AIME-2024 (val placeholder) parquet in verl format."""
 import os, pandas as pd
 from huggingface_hub import hf_hub_download
-out = "/home/sya225/opd/verl_data/dapo_math17k"; os.makedirs(out, exist_ok=True)
+out = "/home/USER/opd/verl_data/dapo_math17k"; os.makedirs(out, exist_ok=True)
 tr = hf_hub_download("BytedTsinghua-SIA/DAPO-Math-17k", "data/dapo-math-17k.parquet", repo_type="dataset")
 te = hf_hub_download("BytedTsinghua-SIA/AIME-2024", "data/aime-2024.parquet", repo_type="dataset")
 for src, name in [(tr, "train"), (te, "test")]:

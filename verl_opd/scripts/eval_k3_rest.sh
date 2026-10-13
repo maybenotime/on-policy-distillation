@@ -1,7 +1,7 @@
 #!/bin/bash
 # 19 GPUs 0/1 (free): run the last two items of the k3 8k chain in parallel now (same tags; the serial chain on GPU 3
 # will find them finished and skip). s50 on GPU 0, untrained Qwen3-1.7B-Base on GPU 1.
-source /home/sya225/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
+source /home/USER/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
 export MAX_TOKENS=8192 CONCURRENCY=100 GPU_UTIL=0.9 MATH_ONLY=1 MAX_MODEL_LEN=32768
 export COMPS="aime/aime_2024_I aime/aime_2024_II aime/aime_2025 custom/amc custom/beyondaime"
 CK=$SCRATCH/checkpoints/opd_q3b17_fromQ3B4Bgrpo_dapo_16k_k3; BASE=Qwen/Qwen3-1.7B-Base

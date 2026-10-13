@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# On-policy distillation with verl on cs-venus-05 (3x RTX PRO 6000 Blackwell, 96GB).
+# On-policy distillation with verl on node-A (3x RTX PRO 6000 Blackwell, 96GB).
 #
 # GPU split: 2 GPUs actor(train+vLLM rollout) + 1 GPU teacher(vLLM).
 # Adapted from verl v0.9.0 examples/on_policy_distillation_trainer/run_qwen3_8b_fsdp.sh
 #
 # Usage:
-#   source /home/sya225/opd/env.sh
-#   bash /home/sya225/opd/scripts/run_opd_math.sh                 # full run
-#   SMOKE=1 bash /home/sya225/opd/scripts/run_opd_math.sh         # 2 steps, tiny batch
+#   source /home/USER/opd/env.sh
+#   bash /home/USER/opd/scripts/run_opd_math.sh                 # full run
+#   SMOKE=1 bash /home/USER/opd/scripts/run_opd_math.sh         # 2 steps, tiny batch
 set -xeuo pipefail
 
-source /home/sya225/opd/env.sh
+source /home/USER/opd/env.sh
 
 STUDENT_MODEL=${STUDENT_MODEL:-Qwen/Qwen2.5-0.5B-Instruct}
 TEACHER_MODEL=${TEACHER_MODEL:-Qwen/Qwen2.5-7B-Instruct}
@@ -39,8 +39,8 @@ total_epochs=${TOTAL_EPOCHS:-1}
 save_freq=${SAVE_FREQ:-100}
 test_freq=${TEST_FREQ:--1}
 
-DATA_DIR=${DATA_DIR:-/home/sya225/opd/verl_data/gsm8k}
-CKPT_DIR=${CKPT_DIR:-/localscratch/sya225/checkpoints/verl_opd}
+DATA_DIR=${DATA_DIR:-/home/USER/opd/verl_data/gsm8k}
+CKPT_DIR=${CKPT_DIR:-/localscratch/USER/checkpoints/verl_opd}
 LOGGER=${LOGGER:-'["console"]'}
 
 EXTRA_ARGS=()
@@ -57,7 +57,7 @@ max_num_tokens=$(( max_prompt_length + max_response_length + 1 ))
 rm -rf /tmp/ray
 mkdir -p "$CKPT_DIR"
 # Run from node-local disk: os.getcwd() inside Ray workers intermittently
-# raises ENOENT when cwd is on BeeGFS /home (seen on cs-venus-19).
+# raises ENOENT when cwd is on BeeGFS /home (seen on node-B).
 cd "$CKPT_DIR"
 
 python3 -m verl.trainer.main_ppo \

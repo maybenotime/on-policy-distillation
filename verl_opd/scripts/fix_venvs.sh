@@ -12,7 +12,7 @@
 # compiled extensions load unchanged. Repoint the venvs at /usr/bin/python3.12.
 set -x
 SYS=/usr/bin/python3.12
-for V in /home/sya225/opd/envs/verl_opd /home/sya225/opd/envs/code_eval_env /home/sya225/opd/envs/evalplus_env; do
+for V in /home/USER/opd/envs/verl_opd /home/USER/opd/envs/code_eval_env /home/USER/opd/envs/evalplus_env; do
     [ -d "$V" ] || { echo "skip missing $V"; continue; }
     echo "=== repairing $V ==="
     for name in python python3 python3.12; do
@@ -36,11 +36,11 @@ PY
     "$V/bin/python" -c "import sys; print('  python', sys.version.split()[0], 'prefix', sys.prefix)" 2>&1 | tail -2
 done
 echo "=== import smoke test ==="
-/home/sya225/opd/envs/code_eval_env/bin/python -c "
+/home/USER/opd/envs/code_eval_env/bin/python -c "
 import vllm, transformers, datasets, evalplus
 print('code_eval_env OK: vllm', vllm.__version__, '| transformers', transformers.__version__)
 " 2>&1 | tail -3
-/home/sya225/opd/envs/verl_opd/bin/python -c "
+/home/USER/opd/envs/verl_opd/bin/python -c "
 import torch, verl, vllm, flash_attn
 print('verl_opd OK: torch', torch.__version__, '| verl', verl.__version__, '| flash_attn', flash_attn.__version__)
 print('cuda available:', torch.cuda.is_available())

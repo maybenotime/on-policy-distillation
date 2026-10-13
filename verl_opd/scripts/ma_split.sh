@@ -1,10 +1,10 @@
 #!/bin/bash
 # 19: once LCB gen is done, replace the sequential MathArena stage with two vLLM servers
 # (GPU1 full, GPU3 shared with the training teacher) and run scoring concurrently.
-source /home/sya225/opd/env.sh none
-TAG=opd-1.7b-fromRLCR4B; CFG=opd_1.7b_fromRLCR4B; HF=/localscratch/sya225/checkpoints/hf_${CFG}_step424
-E=$CODE_EVAL_ENV; R=$OPD_HOME/matharena; O=$OPD_HOME/bench/official; L=/localscratch/sya225/logs
-export PATH="$E/bin:$PATH" VLLM_API_KEY=dummy HF_DATASETS_CACHE=/localscratch/sya225/hf_cache/datasets
+source /home/USER/opd/env.sh none
+TAG=opd-1.7b-fromRLCR4B; CFG=opd_1.7b_fromRLCR4B; HF=/localscratch/USER/checkpoints/hf_${CFG}_step424
+E=$CODE_EVAL_ENV; R=$OPD_HOME/matharena; O=$OPD_HOME/bench/official; L=/localscratch/USER/logs
+export PATH="$E/bin:$PATH" VLLM_API_KEY=dummy HF_DATASETS_CACHE=/localscratch/USER/hf_cache/datasets
 t0=$(date +%s); log () { echo "[ma_split $(( $(date +%s) - t0 ))s] $*"; }
 
 until [ -s $O/lcb_v6_${TAG}_raw.json ] && grep -q "serving :8031" $L/v5_${TAG}.log; do sleep 20; done

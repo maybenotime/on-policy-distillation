@@ -9,12 +9,12 @@
 #  4. uv venvs have no pip; use uv, and reuse uv's already-unpacked sdist.
 set -x
 export PATH=$HOME/.local/bin:$PATH
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
 export MAX_JOBS=12
 export NVCC_THREADS=2
-V=/home/sya225/opd/envs/verl_opd
-SRC_CACHE=$(ls -d /localscratch/sya225/uv_cache/sdists-v9/pypi/flash-attn/2.8.3.post1/*/src 2>/dev/null | head -1)
-WORK=/localscratch/sya225/fa_build
+V=/home/USER/opd/envs/verl_opd
+SRC_CACHE=$(ls -d /localscratch/USER/uv_cache/sdists-v9/pypi/flash-attn/2.8.3.post1/*/src 2>/dev/null | head -1)
+WORK=/localscratch/USER/fa_build
 
 echo "=== [1/4] stage pristine source  $(date -Is) ==="
 [ -d "$SRC_CACHE" ] || { echo NO_CACHED_SDIST; exit 1; }
@@ -38,9 +38,9 @@ PY
 [ $? -eq 0 ] || { echo PATCH_FAILED; exit 1; }
 
 echo "=== [3/4] build+install  $(date -Is) ==="
-uv pip install --python "$V/bin/python" . --no-build-isolation --no-deps > /localscratch/sya225/logs/fa5_build.log 2>&1
+uv pip install --python "$V/bin/python" . --no-build-isolation --no-deps > /localscratch/USER/logs/fa5_build.log 2>&1
 echo "install_rc=$?"
-tail -4 /localscratch/sya225/logs/fa5_build.log
+tail -4 /localscratch/USER/logs/fa5_build.log
 
 echo "=== [4/4] verify (from /tmp so we import the INSTALLED pkg, not ./flash_attn)  $(date -Is) ==="
 cd /tmp

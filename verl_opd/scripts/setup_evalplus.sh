@@ -3,9 +3,9 @@
 # verl_opd training env (evalplus pins its own transformers/vllm range).
 set -x
 export PATH=$HOME/.local/bin:$PATH
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
-export HF_HOME=/localscratch/sya225/hf_cache
-E=/home/sya225/opd/envs/evalplus_env
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
+export HF_HOME=/localscratch/USER/hf_cache
+E=/home/USER/opd/envs/evalplus_env
 uv venv "$E" --python 3.12 || exit 1
 uv pip install --python "$E/bin/python" evalplus 2>&1 | tail -5
 "$E/bin/python" -c "

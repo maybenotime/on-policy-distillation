@@ -1,8 +1,8 @@
 #!/bin/bash
 export PATH=$HOME/.local/bin:$PATH
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
-export HF_HOME=/localscratch/sya225/hf_cache
-V=/home/sya225/opd/envs/verl_opd
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
+export HF_HOME=/localscratch/USER/hf_cache
+V=/home/USER/opd/envs/verl_opd
 echo "===== install verl[vllm,math] 0.9.0 ====="
 time uv pip install --python "$V/bin/python" "verl[vllm,math]==0.9.0" 2>&1 | tail -15
 echo "===== EXIT=$? ====="

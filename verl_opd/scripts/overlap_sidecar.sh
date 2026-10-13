@@ -2,10 +2,10 @@
 # GPU 3 sidecar for chain19_ds.sh: for step 0 (base student) and every saved ckpt, merge -> 1000 fixed DAPO prompts
 # rollout -> student/teacher top-k -> overlap@16/32 (same metric as the tables). Appends to fork/overlap_curve_$TAG.txt.
 # Deletes each FSDP ckpt after measuring, except the newest one (kept for resume).
-set -u; source /home/sya225/opd/env.sh none; S=/home/sya225/opd/scripts; F=$OPD_HOME/fork
+set -u; source /home/USER/opd/env.sh none; S=/home/USER/opd/scripts; F=$OPD_HOME/fork
 TAG=ds15b_fromJustRL_dapo_16k; CK=$SCRATCH/checkpoints/opd_$TAG; GPU=3
 STUDENT0=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B; TEACHER=hbx/JustRL-DeepSeek-1.5B
-DATA=/home/sya225/opd/verl_data/dapo_math17k/train.parquet; OUT=$F/overlap_curve_$TAG.txt; DONE=$F/.done_$TAG
+DATA=/home/USER/opd/verl_data/dapo_math17k/train.parquet; OUT=$F/overlap_curve_$TAG.txt; DONE=$F/.done_$TAG
 mkdir -p $F; touch $DONE
 measure () {  # step model_path
   local n=$1 m=$2
@@ -28,7 +28,7 @@ while true; do
     measure $d $hf
     if grep -qx "$d" $DONE && [ "$d" -lt "$latest" ]; then rm -rf $CK/global_step_$d; echo "removed fsdp ckpt $d"; fi
   done
-  if grep -q "######## END $TAG" /home/sya225/logs/ds19.log 2>/dev/null; then
+  if grep -q "######## END $TAG" /home/USER/logs/ds19.log 2>/dev/null; then
     pending=$(ls -d $CK/global_step_* 2>/dev/null | sed 's|.*global_step_||' | while read d; do grep -qx "$d" $DONE || echo $d; done | wc -l)
     [ "$pending" -eq 0 ] && break
   fi

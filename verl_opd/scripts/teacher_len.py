@@ -5,7 +5,7 @@ import sys, json, re, collections, pandas as pd, numpy as np
 from vllm import LLM, SamplingParams
 model, n, max_tokens = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 out_path = sys.argv[4] if len(sys.argv) > 4 else None
-df = pd.read_parquet("/home/sya225/opd/verl_data/ot3_code30k/test.parquet").head(n)
+df = pd.read_parquet("/home/USER/opd/verl_data/ot3_code30k/test.parquet").head(n)
 llm = LLM(model=model, dtype="bfloat16", max_model_len=1024 + max_tokens, gpu_memory_utilization=0.85, enforce_eager=True)
 tok = llm.get_tokenizer()
 prompts = [tok.apply_chat_template(list(p), tokenize=False, add_generation_prompt=True, enable_thinking=False) for p in df["prompt"]]

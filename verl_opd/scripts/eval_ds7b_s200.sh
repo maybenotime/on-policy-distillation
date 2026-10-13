@@ -1,6 +1,6 @@
 #!/bin/bash
 # 19 GPU 0: MathArena (7 comps, 16k) eval of the DS-7B-distilled student at step 200 (matches the JustRL s200 eval)
-source /home/sya225/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
+source /home/USER/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
 export MAX_TOKENS=16384 CONCURRENCY=100 GPU_UTIL=0.9 MATH_ONLY=1
 export COMPS="aime/aime_2024_I aime/aime_2024_II aime/aime_2025 custom/amc custom/beyondaime hmmt/hmmt_feb_2025 hmmt/hmmt_feb_2026"
 CK=$SCRATCH/checkpoints/opd_ds15b_fromDS7B_dapo_16k; BASE=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B

@@ -1,9 +1,9 @@
 #!/bin/bash
 # 19 GPU 3: offline pre-OPD probe, Qwen3-1.7B-Base (student) vs Thinking-Space/Qwen3-4B-Base-GRPO (teacher), 1000 DAPO prompts
-set -u; source /home/sya225/opd/scripts/topk_common.sh
+set -u; source /home/USER/opd/scripts/topk_common.sh
 S=$OPD_HOME/scripts; G=3; RT=q3b17-dapo
 STUDENT=Qwen/Qwen3-1.7B-Base; TEACHER=Thinking-Space/Qwen3-4B-Base-GRPO
-ROLL_DATA=/home/sya225/opd/verl_data/dapo_math17k/train.parquet bash $S/post_topk.sh $RT $STUDENT $TEACHER $G preq3b_TQ3B4Bgrpo 0.85
+ROLL_DATA=/home/USER/opd/verl_data/dapo_math17k/train.parquet bash $S/post_topk.sh $RT $STUDENT $TEACHER $G preq3b_TQ3B4Bgrpo 0.85
 echo "==== entropy (HF full vocab) ===="
 export CUDA_VISIBLE_DEVICES=$G
 [ -s $F/ent_student_$RT.npz ] || "$E/bin/python" $S/fork_entropy.py --model $STUDENT --rollouts $F/roll_$RT.jsonl --out $F/ent_student_$RT.npz > $L/ent_student_$RT.log 2>&1

@@ -2,9 +2,9 @@
 # Score both code benchmarks for all 5 models from the v5 (8192-cap) generations.
 # evalplus caches into <samples>_eval_results.json and silently reuses it, so the
 # cache MUST be deleted first or scores come back byte-identical to the old run.
-E=/home/sya225/opd/envs/code_eval_env
-export PATH="$E/bin:$PATH" HF_HOME=/localscratch/sya225/hf_cache
-O=/home/sya225/opd/bench/official
+E=/home/USER/opd/envs/code_eval_env
+export PATH="$E/bin:$PATH" HF_HOME=/localscratch/USER/hf_cache
+O=/home/USER/opd/bench/official
 rm -f "$O"/*_eval_results.json "$O"/*_output_eval.json "$O"/*_codegeneration_output_eval.json
 
 for T in Qwen3-8B Qwen3-4B Qwen3-1.7B opd-4b opd-1.7b; do

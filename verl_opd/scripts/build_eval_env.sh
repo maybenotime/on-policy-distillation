@@ -11,9 +11,9 @@
 #     + ninja, all in one throwaway env.
 set -x
 export PATH=$HOME/.local/bin:$PATH
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
-export HF_HOME=/localscratch/sya225/hf_cache
-E=/home/sya225/opd/envs/code_eval_env
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
+export HF_HOME=/localscratch/USER/hf_cache
+E=/home/USER/opd/envs/code_eval_env
 
 rm -rf "$E"
 uv venv "$E" --python 3.12 || exit 1
@@ -33,16 +33,16 @@ print("ninja at    ", shutil.which("ninja"))
 PY
 
 echo "===== LCB dataset load (needs datasets 2.21 cache) ====="
-cd /home/sya225/opd/LiveCodeBench
-HF_DATASETS_CACHE=/localscratch/sya225/hf_cache/datasets \
-PYTHONPATH=/home/sya225/opd/LiveCodeBench "$E/bin/python" - <<'PY'
+cd /home/USER/opd/LiveCodeBench
+HF_DATASETS_CACHE=/localscratch/USER/hf_cache/datasets \
+PYTHONPATH=/home/USER/opd/LiveCodeBench "$E/bin/python" - <<'PY'
 from lcb_runner.benchmarks.code_generation import load_code_generation_dataset
 d = load_code_generation_dataset(release_version="release_v6", start_date="2025-01-01")
 print("LCB v6 problems:", len(d))
 PY
 
 echo "===== LCB scoring path import (custom_evaluator chain) ====="
-PYTHONPATH=/home/sya225/opd/LiveCodeBench "$E/bin/python" -c "
+PYTHONPATH=/home/USER/opd/LiveCodeBench "$E/bin/python" -c "
 from lcb_runner.runner.scenario_router import build_prompt_benchmark, get_metrics
 print('scenario_router import OK')
 " 2>&1 | tail -3

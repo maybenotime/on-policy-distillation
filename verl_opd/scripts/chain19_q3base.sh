@@ -1,12 +1,12 @@
 #!/bin/bash
-# job 265672 (cs-venus-19): OPD  student Qwen/Qwen3-1.7B-Base <- teacher Thinking-Space/Qwen3-4B-Base-GRPO
+# job 265672 (node-B): OPD  student Qwen/Qwen3-1.7B-Base <- teacher Thinking-Space/Qwen3-4B-Base-GRPO
 # same recipe as chain19_ds.sh: DAPO-Math-17k (271 steps), k1_probe (per-step overlap16/rho/FO/dH), lr 1e-6, 16k, ckpt every 50.
-source /home/sya225/opd/env.sh none; S=/home/sya225/opd/scripts; export VERL_TEACHER_KEEP_SAMPLED=1
+source /home/USER/opd/env.sh none; S=/home/USER/opd/scripts; export VERL_TEACHER_KEEP_SAMPLED=1
 TAG=q3b17_fromQ3B4Bgrpo_dapo_16k
 echo "######## START $TAG $(date -Is) ########"
 CUDA_VISIBLE_DEVICES=0,1,2 RAY_TMPDIR=/tmp/ray_k1b \
 env STUDENT_MODEL=Qwen/Qwen3-1.7B-Base TEACHER_MODEL=Thinking-Space/Qwen3-4B-Base-GRPO \
-    DATA_DIR=/home/sya225/opd/verl_data/dapo_math17k \
+    DATA_DIR=/home/USER/opd/verl_data/dapo_math17k \
     TRAIN_BATCH_SIZE=64 PPO_MINI_BATCH_SIZE=64 ROLLOUT_N=1 ACTOR_LR=1e-6 MAX_PROMPT_LENGTH=1024 \
     MAX_RESPONSE_LENGTH=16384 PPO_MAX_TOKEN_LEN_PER_GPU=24576 \
     DISTILLATION_LOSS_MODE=k1_probe USE_POLICY_GRADIENT=True DISTILLATION_TOPK=64 SAVE_FREQ=50 HF_HUB_OFFLINE=1 \

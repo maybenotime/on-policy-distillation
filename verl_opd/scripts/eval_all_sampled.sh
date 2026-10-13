@@ -11,17 +11,17 @@
 # n=4 with a fixed seed, reported as avg pass@1 -- single-sample scores are too
 # noisy once decoding is stochastic.
 set -x
-E=/home/sya225/opd/envs/code_eval_env
-V=/home/sya225/opd/envs/verl_opd
+E=/home/USER/opd/envs/code_eval_env
+V=/home/USER/opd/envs/verl_opd
 export PATH="$E/bin:$PATH"
-export HF_HOME=/localscratch/sya225/hf_cache
-export HF_DATASETS_CACHE=/localscratch/sya225/hf_cache/datasets
-export PYTHONPATH=/home/sya225/opd/LiveCodeBench
+export HF_HOME=/localscratch/USER/hf_cache
+export HF_DATASETS_CACHE=/localscratch/USER/hf_cache/datasets
+export PYTHONPATH=/home/USER/opd/LiveCodeBench
 
-CKPT_ROOT=/localscratch/sya225/checkpoints/opd_code_30k
+CKPT_ROOT=/localscratch/USER/checkpoints/opd_code_30k
 STEP_NUM=$(ls -d "$CKPT_ROOT"/global_step_* 2>/dev/null | sed "s|.*/global_step_||" | sort -n | tail -1)
 STEP_DIR="$CKPT_ROOT/global_step_$STEP_NUM"
-HF_OUT=/localscratch/sya225/checkpoints/hf_opd30k_step${STEP_NUM}
+HF_OUT=/localscratch/USER/checkpoints/hf_opd30k_step${STEP_NUM}
 echo "[eval] merging $STEP_DIR -> $HF_OUT"
 "$V/bin/python" -m verl.model_merger merge --backend fsdp \
     --local_dir "$STEP_DIR/actor" --target_dir "$HF_OUT" 2>&1 | tail -4
@@ -30,14 +30,14 @@ from transformers import AutoTokenizer
 AutoTokenizer.from_pretrained('Qwen/Qwen3-4B').save_pretrained('$HF_OUT')
 print('tokenizer saved')"
 
-OUT=/home/sya225/opd/bench/sampled
+OUT=/home/USER/opd/bench/sampled
 mkdir -p "$OUT"
-cd /home/sya225/opd/LiveCodeBench
+cd /home/USER/opd/LiveCodeBench
 
 run() {  # $1=model  $2=tag
   for BENCH in humanevalplus lcb_v6; do
     echo "######## GEN $2 / $BENCH  $(date -Is) ########"
-    "$E/bin/python" /home/sya225/opd/scripts/gen2.py --model "$1" --bench "$BENCH" \
+    "$E/bin/python" /home/USER/opd/scripts/gen2.py --model "$1" --bench "$BENCH" \
         --out_dir "$OUT" --tag "$2" --max_tokens 6144 \
         --temperature 0.6 --top_p 0.95 --top_k 20 --n 4 --tp 1 --gpu_mem_util 0.85 \
         2>&1 | grep -aE "\[gen\]|Error|Traceback" | tail -8
@@ -53,7 +53,7 @@ for TAG in Qwen3-8B Qwen3-4B opd30k-step${STEP_NUM}; do
   "$E/bin/python" -m evalplus.evaluate --dataset humaneval \
       --samples "$OUT/humanevalplus_${TAG}.jsonl" 2>&1 | tail -6
   echo "==== LiveCodeBench v6 : $TAG ===="
-  cd /home/sya225/opd/LiveCodeBench
+  cd /home/USER/opd/LiveCodeBench
   "$E/bin/python" -m lcb_runner.runner.custom_evaluator \
       --custom_output_file "$OUT/lcb_v6_${TAG}.json" \
       --release_version release_v6 --start_date 2025-01-01 \

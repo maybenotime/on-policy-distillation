@@ -1,7 +1,7 @@
 #!/bin/bash
 # 19: wait for Code-300 16k resume to finish, then Math-500 16k on GPUs 0,1,2 (2 student + 1 teacher).
-source /home/sya225/opd/env.sh none
-until grep -q "RESUME_CODE300_DONE" /home/sya225/logs/resume_code300.log 2>/dev/null; do sleep 60; done
+source /home/USER/opd/env.sh none
+until grep -q "RESUME_CODE300_DONE" /home/USER/logs/resume_code300.log 2>/dev/null; do sleep 60; done
 echo "code300 finished $(date -Is)"; sleep 60
 sed -n '/^COMMON=/,/^}/p' $OPD_HOME/scripts/chain19.sh > /tmp/chain19_common.sh
 source /tmp/chain19_common.sh

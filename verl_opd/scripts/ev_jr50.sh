@@ -1,7 +1,7 @@
 #!/bin/bash
 # ev_jr50.sh <SUFFIX> <GPU> <PORT> <COMPS...>   — JustRL DAPO s50, 16k, split by competition
 set -u
-source /home/sya225/opd/env.sh none
+source /home/USER/opd/env.sh none
 S=$OPD_HOME/scripts; L=$SCRATCH/logs
 SUF=$1; G=$2; PORT=$3; shift 3
 export MAX_TOKENS=16384 CONCURRENCY=100 GPU_UTIL=0.9 MATH_ONLY=1

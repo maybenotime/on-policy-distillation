@@ -1,6 +1,6 @@
 #!/bin/bash
 # 264439 GPU 2 (shared): length probe of the Math-1200 teacher and of the math-run student at step 100
-set -u; source /home/sya225/opd/env.sh none; E=$CODE_EVAL_ENV; export PATH="$E/bin:$PATH" VLLM_LOGGING_LEVEL=WARNING CUDA_VISIBLE_DEVICES=2
+set -u; source /home/USER/opd/env.sh none; E=$CODE_EVAL_ENV; export PATH="$E/bin:$PATH" VLLM_LOGGING_LEVEL=WARNING CUDA_VISIBLE_DEVICES=2
 S=$OPD_HOME/scripts; O=$OPD_HOME/fork/probe; mkdir -p $O
 "$E/bin/python" $S/len_probe.py --model Keven16/Qwen3-4B-Non-Thinking-RL-Math-Step1200 --n 48 --max_tokens 16384 --util 0.3 --out $O/T_K4Bmath1200.jsonl 2>&1 | grep -a '\[probe\]'
 CK=$SCRATCH/checkpoints/opd_math_17b_fromK4Bmath1200/global_step_100/actor; HF=$SCRATCH/checkpoints/hf_opd_1.7b_math_fromK4Bmath1200_step100

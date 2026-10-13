@@ -11,7 +11,7 @@ from vllm import LLM, SamplingParams
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--model", required=True)
-ap.add_argument("--data", default="/home/sya225/opd/verl_data/ot3_code30k/train.parquet")
+ap.add_argument("--data", default="/home/USER/opd/verl_data/ot3_code30k/train.parquet")
 ap.add_argument("--n", type=int, default=1000)
 ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--max_tokens", type=int, default=4096)

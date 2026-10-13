@@ -1,8 +1,8 @@
 #!/bin/bash
 export PATH=$HOME/.local/bin:$PATH
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
-V=/home/sya225/opd/envs/verl_opd
-L=/localscratch/sya225/logs
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
+V=/home/USER/opd/envs/verl_opd
+L=/localscratch/USER/logs
 mkdir -p $L
 
 echo "########## [1/3] install flash-attn ##########"
@@ -20,7 +20,7 @@ PY
 echo "FA_TEST_EXIT=$?"
 
 echo "########## [3/3] OPD smoke test ##########"
-SMOKE=1 bash /home/sya225/opd/scripts/run_opd_math.sh > $L/smoke6.log 2>&1
+SMOKE=1 bash /home/USER/opd/scripts/run_opd_math.sh > $L/smoke6.log 2>&1
 echo "SMOKE_EXIT=$?" | tee -a $L/smoke6.log
 tail -5 $L/smoke6.log
 echo "########## CHAIN_DONE ##########"

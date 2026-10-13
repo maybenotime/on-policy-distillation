@@ -10,8 +10,8 @@
 # have no business anywhere near the training or code-eval environments.
 set -x
 export PATH="$HOME/.local/bin:$PATH"
-export UV_CACHE_DIR=/localscratch/sya225/uv_cache
-R=/home/sya225/opd/matharena
+export UV_CACHE_DIR=/localscratch/USER/uv_cache
+R=/home/USER/opd/matharena
 
 rm -rf "$R"
 git clone --depth 1 https://github.com/eth-sri/matharena.git "$R" 2>&1 | tail -3

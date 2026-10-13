@@ -9,15 +9,15 @@
 # not exist, so the hybrid Qwen3-8B/4B pair in non-thinking mode is the only way
 # to get a symmetric teacher/student format. Both share vocab 151936.
 #
-# GPU split on cs-venus-05: 2 GPUs actor(train + vLLM rollout) + 1 GPU teacher.
+# GPU split on node-A: 2 GPUs actor(train + vLLM rollout) + 1 GPU teacher.
 #
 # Usage (ALWAYS pass -c 24 to the srun step, see run_opd_math.sh notes):
 #   srun --jobid=<JID> --exact --gres=gpu:3 -c 24 bash -lc \
-#     'bash /home/sya225/opd/scripts/run_opd_code.sh'
+#     'bash /home/USER/opd/scripts/run_opd_code.sh'
 #   SMOKE=1 ... for a 2-step validation
 set -xeuo pipefail
 
-source /home/sya225/opd/env.sh train
+source /home/USER/opd/env.sh train
 
 STUDENT_MODEL=${STUDENT_MODEL:-Qwen/Qwen3-4B}
 TEACHER_MODEL=${TEACHER_MODEL:-Qwen/Qwen3-8B}
@@ -48,8 +48,8 @@ total_epochs=${TOTAL_EPOCHS:-1}
 save_freq=${SAVE_FREQ:-100}
 test_freq=${TEST_FREQ:--1}
 
-DATA_DIR=${DATA_DIR:-/home/sya225/opd/verl_data/ot3_code30k}
-CKPT_DIR=${CKPT_DIR:-/localscratch/sya225/checkpoints/opd_code_q3_8b_to_4b}
+DATA_DIR=${DATA_DIR:-/home/USER/opd/verl_data/ot3_code30k}
+CKPT_DIR=${CKPT_DIR:-/localscratch/USER/checkpoints/opd_code_q3_8b_to_4b}
 LOGGER=${LOGGER:-'["console"]'}
 
 EXTRA_ARGS=()
@@ -64,7 +64,7 @@ max_num_tokens=$(( max_prompt_length + max_response_length + 1 ))
 rm -rf /tmp/ray
 mkdir -p "$CKPT_DIR"
 # Run from node-local disk: os.getcwd() inside Ray workers intermittently
-# raises ENOENT when cwd is on BeeGFS /home (seen on cs-venus-19).
+# raises ENOENT when cwd is on BeeGFS /home (seen on node-B).
 cd "$CKPT_DIR"
 
 python3 -m verl.trainer.main_ppo \
@@ -97,7 +97,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.max_model_len=${max_num_tokens} \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=True \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${ppo_max_token_len_per_gpu} \
-    reward.custom_reward_function.path=/home/sya225/opd/scripts/zero_reward.py \
+    reward.custom_reward_function.path=/home/USER/opd/scripts/zero_reward.py \
     reward.custom_reward_function.name=compute_score \
     trainer.use_v1=False \
     trainer.balance_batch=True \

@@ -3,7 +3,7 @@
 # and one teacher.  1000 prompts per shard, 7 shards = the whole 7000-row subset.
 #   rho_worker.sh <TAG> <FAMILY> <STUDENT> <DATA> <GPU> <TNAME> <TEACHER> [SHARDS] [MAXTOK]
 set -u
-source /home/sya225/opd/env.sh none
+source /home/USER/opd/env.sh none
 E=$CODE_EVAL_ENV; S=$OPD_HOME/scripts; R=$SCRATCH/rho; L=$SCRATCH/logs
 mkdir -p $R $L
 export PATH="$E/bin:$PATH" TOKENIZERS_PARALLELISM=false VLLM_LOGGING_LEVEL=WARNING

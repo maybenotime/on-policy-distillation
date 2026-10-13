@@ -1,7 +1,7 @@
 #!/bin/bash
-E=/home/sya225/opd/envs/code_eval_env
-export PATH="$E/bin:$PATH" HF_HOME=/localscratch/sya225/hf_cache
-O=/home/sya225/opd/bench/official
+E=/home/USER/opd/envs/code_eval_env
+export PATH="$E/bin:$PATH" HF_HOME=/localscratch/USER/hf_cache
+O=/home/USER/opd/bench/official
 rm -f "$O"/humanevalplus_*_eval_results.json     # evalplus silently reuses this
 for T in Qwen3-8B Qwen3-4B opd-4b Qwen3-1.7B opd-1.7b opd-1.7b-from14b; do
   echo "######## $T ########"

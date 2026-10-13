@@ -1,5 +1,5 @@
 """Sample N problems from zwhe99/DeepMath-103K (fixed seed) -> parquet used by gen/grade/build.
-usage: deepmath_prep.py --n 45000 --seed 0 --out /home/sya225/opd/verl_data/deepmath/sample.parquet
+usage: deepmath_prep.py --n 45000 --seed 0 --out /home/USER/opd/verl_data/deepmath/sample.parquet
 """
 import argparse, numpy as np, pandas as pd
 from datasets import load_dataset

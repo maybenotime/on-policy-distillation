@@ -1,6 +1,6 @@
 #!/bin/bash
 # 19: MathArena (7 comps, 8k, n=4) evals of the Qwen3-1.7B <- 8B student at steps 200 (GPU 0) and 50 (GPU 1), in parallel.
-source /home/sya225/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
+source /home/USER/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
 export MAX_TOKENS=8192 CONCURRENCY=100 GPU_UTIL=0.9 MATH_ONLY=1
 export COMPS="aime/aime_2024_I aime/aime_2024_II aime/aime_2025 custom/amc custom/beyondaime hmmt/hmmt_feb_2025 hmmt/hmmt_feb_2026"
 CK=$SCRATCH/checkpoints/opd_q3i17_from8B_dapo_16k; BASE=Qwen/Qwen3-1.7B

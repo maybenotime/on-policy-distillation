@@ -1,6 +1,6 @@
 #!/bin/bash
 # Score the already-generated HE+ / LCB outputs of the Code-300 16k student (no GPU).
-source /home/sya225/opd/env.sh none
+source /home/USER/opd/env.sh none
 TAG=opd-1.7b-fromK4Bcode300-16k; E=$CODE_EVAL_ENV; O=$OPD_HOME/bench/official
 export PATH="$E/bin:$PATH" PYTHONPATH=$OPD_HOME/LiveCodeBench
 rm -f "$O/humanevalplus_${TAG}_eval_results.json" "$O/lcb_v6_${TAG}"*eval*.json

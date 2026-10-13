@@ -22,7 +22,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n_train", type=int, default=30000)
     ap.add_argument("--n_test", type=int, default=500)
-    ap.add_argument("--out_dir", default="/home/sya225/opd/verl_data/ot3_code30k")
+    ap.add_argument("--out_dir", default="/home/USER/opd/verl_data/ot3_code30k")
     ap.add_argument("--max_scan", type=int, default=400000,
                     help="stop scanning after this many rows (code region is the first ~250k)")
     args = ap.parse_args()

@@ -13,7 +13,7 @@
 set -u
 COMMON=(
   STUDENT_MODEL=Qwen/Qwen3-1.7B
-  DATA_DIR=/home/sya225/opd/verl_data/ot3_code30k
+  DATA_DIR=/home/USER/opd/verl_data/ot3_code30k
   TRAIN_BATCH_SIZE=64 PPO_MINI_BATCH_SIZE=64 ROLLOUT_N=1
   ACTOR_LR=5e-6 MAX_PROMPT_LENGTH=1024 MAX_RESPONSE_LENGTH=8192
   DISTILLATION_LOSS_MODE=k1 USE_POLICY_GRADIENT=True DISTILLATION_TOPK=64
@@ -24,9 +24,9 @@ COMMON=(
 run () {   # tag  teacher  gpus  teacher_mem_util
   CUDA_VISIBLE_DEVICES=$3 RAY_TMPDIR=/tmp/ray_$1 \
   env "${COMMON[@]}" TEACHER_MODEL="$2" TEACHER_GPU_MEM_UTIL=$4 \
-      CKPT_DIR=/localscratch/sya225/checkpoints/opd_code_17b_from$1 \
-      bash /home/sya225/opd/scripts/run_opd_code.sh \
-      > /localscratch/sya225/logs/train_17b_from$1.log 2>&1
+      CKPT_DIR=/localscratch/USER/checkpoints/opd_code_17b_from$1 \
+      bash /home/USER/opd/scripts/run_opd_code.sh \
+      > /localscratch/USER/logs/train_17b_from$1.log 2>&1
   echo "######## END $1 rc=$? $(date -Is) ########"
 }
 

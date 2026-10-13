@@ -2,7 +2,7 @@
 # 19, all 4 GPUs: MathArena-only (16k) evals in parallel
 #  GPU0: JustRL-student step 200   GPU1: JustRL-student step 250   GPU2: R1-Distill-1.5B base
 #  GPU3: Qwen3-1.7B-Base <- 4B-Base-GRPO (k3) step 50, then untrained Qwen3-1.7B-Base for reference
-source /home/sya225/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
+source /home/USER/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
 export MAX_TOKENS=16384 CONCURRENCY=100 GPU_UTIL=0.9 MATH_ONLY=1
 export COMPS="aime/aime_2024_I aime/aime_2024_II aime/aime_2025 custom/amc custom/beyondaime hmmt/hmmt_feb_2025 hmmt/hmmt_feb_2026"   # math500 dropped, HMMT last
 merge () { # ckpt_root step out base

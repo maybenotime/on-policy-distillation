@@ -1,6 +1,6 @@
 #!/bin/bash
 # 05: let Math-1200 16k reach global_step_100, then stop it. No eval.
-source /home/sya225/opd/env.sh none
+source /home/USER/opd/env.sh none
 C=$SCRATCH/checkpoints/opd_code_17b_fromK4Bmath1200_16k
 until [ "$(cat $C/latest_checkpointed_iteration.txt 2>/dev/null)" = "100" ]; do sleep 30; done
 echo "step100 saved $(date -Is)"; sleep 90

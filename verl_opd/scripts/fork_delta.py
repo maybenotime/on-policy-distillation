@@ -23,7 +23,7 @@ def per_traj(sf, tf):
                   abs(hs.mean() - ht.mean()))
     return out
 
-D = "/home/sya225/opd/fork/"
+D = "/home/USER/opd/fork/"
 pre = per_traj(f"{D}ent_student_{a.pre}.npz", f"{D}ent_teacher_{a.pre}.npz")
 post = per_traj(f"{D}ent_student_{a.post}.npz", f"{D}ent_teacher_{a.post}.npz")
 common = sorted(set(pre) & set(post), key=int)

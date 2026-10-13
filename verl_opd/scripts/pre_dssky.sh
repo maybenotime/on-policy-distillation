@@ -1,6 +1,6 @@
 #!/bin/bash
 # 19 GPU 0: offline pre-probe of Skywork-OR1-Math-7B as teacher for R1-Distill-1.5B on the existing 1000 DAPO rollouts
-set -u; source /home/sya225/opd/scripts/topk_common.sh
+set -u; source /home/USER/opd/scripts/topk_common.sh
 S=$OPD_HOME/scripts; G=0; RT=ds15b-dapo; TEACHER=Skywork/Skywork-OR1-Math-7B
 dump $G $RT $TEACHER preds_TSky7B
 met preds_TJustRL_student preds_TSky7B "pre ds1.5B vs Skywork-OR1-7B"

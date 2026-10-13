@@ -11,13 +11,13 @@
 # Results land in bench/official/ so the older bench/sampled/ numbers are not
 # silently overwritten or mixed.
 set -x
-E=/home/sya225/opd/envs/code_eval_env
-export PATH="$E/bin:$PATH" HF_HOME=/localscratch/sya225/hf_cache
-export HF_DATASETS_CACHE=/localscratch/sya225/hf_cache/datasets
-export PYTHONPATH=/home/sya225/opd/LiveCodeBench
-OUT=/home/sya225/opd/bench/official
+E=/home/USER/opd/envs/code_eval_env
+export PATH="$E/bin:$PATH" HF_HOME=/localscratch/USER/hf_cache
+export HF_DATASETS_CACHE=/localscratch/USER/hf_cache/datasets
+export PYTHONPATH=/home/USER/opd/LiveCodeBench
+OUT=/home/USER/opd/bench/official
 mkdir -p "$OUT"
-cd /home/sya225/opd/LiveCodeBench
+cd /home/USER/opd/LiveCodeBench
 
 SAMP="--temperature 0.7 --top_p 0.8 --top_k 20 --min_p 0.0 --n 4 --max_tokens 32768"
 
@@ -25,13 +25,13 @@ for pair in \
     "Qwen/Qwen3-8B:Qwen3-8B" \
     "Qwen/Qwen3-4B:Qwen3-4B" \
     "Qwen/Qwen3-1.7B:Qwen3-1.7B" \
-    "/localscratch/sya225/checkpoints/hf_opd30k_step424:opd-4b" \
-    "/localscratch/sya225/checkpoints/hf_opd17b_step424:opd-1.7b" ; do
+    "/localscratch/USER/checkpoints/hf_opd30k_step424:opd-4b" \
+    "/localscratch/USER/checkpoints/hf_opd17b_step424:opd-1.7b" ; do
   M="${pair%%:*}"; T="${pair##*:}"
   [ -e "$M" ] || [[ "$M" == Qwen/* ]] || { echo "SKIP missing $M"; continue; }
   for BENCH in humanevalplus lcb_v6; do
     echo "######## GEN $T / $BENCH $(date -Is) ########"
-    "$E/bin/python" /home/sya225/opd/scripts/gen2.py --model "$M" --bench "$BENCH" \
+    "$E/bin/python" /home/USER/opd/scripts/gen2.py --model "$M" --bench "$BENCH" \
         --out_dir "$OUT" --tag "$T" $SAMP --tp 1 --gpu_mem_util 0.90 \
         2>&1 | grep -aE "\[gen\]|rror|Traceback|unrecognized" | tail -6
   done
@@ -44,7 +44,7 @@ for T in Qwen3-8B Qwen3-4B Qwen3-1.7B opd-4b opd-1.7b; do
   rm -f "$OUT/humanevalplus_${T}_eval_results.json"   # evalplus silently reuses this
   "$E/bin/python" -m evalplus.evaluate --dataset humaneval --samples "$OUT/humanevalplus_${T}.jsonl" 2>&1|tail -5
   echo "==== LiveCodeBench v6 : $T ===="
-  cd /home/sya225/opd/LiveCodeBench
+  cd /home/USER/opd/LiveCodeBench
   "$E/bin/python" -m lcb_runner.runner.custom_evaluator --custom_output_file "$OUT/lcb_v6_${T}.json" \
       --release_version release_v6 --start_date 2025-01-01 \
       --scenario codegeneration --num_process_evaluate 16 --timeout 8 2>&1|tail -4

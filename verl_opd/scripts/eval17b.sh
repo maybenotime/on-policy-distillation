@@ -3,31 +3,31 @@
 # Same protocol as every other number in this study: non-thinking,
 # T=0.6/top_p=0.95/top_k=20, n=4, avg pass@1.
 set -x
-L=/localscratch/sya225/logs/train_17b.log
+L=/localscratch/USER/logs/train_17b.log
 while ! grep -aq TRAIN_EXIT "$L"; do sleep 120; done
 grep -a TRAIN_EXIT "$L"
 
-E=/home/sya225/opd/envs/code_eval_env
-V=/home/sya225/opd/envs/verl_opd
-export PATH="$E/bin:$PATH" HF_HOME=/localscratch/sya225/hf_cache
-export HF_DATASETS_CACHE=/localscratch/sya225/hf_cache/datasets
-export PYTHONPATH=/home/sya225/opd/LiveCodeBench
+E=/home/USER/opd/envs/code_eval_env
+V=/home/USER/opd/envs/verl_opd
+export PATH="$E/bin:$PATH" HF_HOME=/localscratch/USER/hf_cache
+export HF_DATASETS_CACHE=/localscratch/USER/hf_cache/datasets
+export PYTHONPATH=/home/USER/opd/LiveCodeBench
 
-C=/localscratch/sya225/checkpoints/opd_code_17b
+C=/localscratch/USER/checkpoints/opd_code_17b
 N=$(ls -d "$C"/global_step_* | sed "s|.*/global_step_||" | sort -n | tail -1)
-S="$C/global_step_$N"; H=/localscratch/sya225/checkpoints/hf_opd17b_step${N}
+S="$C/global_step_$N"; H=/localscratch/USER/checkpoints/hf_opd17b_step${N}
 echo "[eval] checkpoint: $S"
 "$V/bin/python" -m verl.model_merger merge --backend fsdp --local_dir "$S/actor" --target_dir "$H" 2>&1|tail -3
 "$E/bin/python" -c "
 from transformers import AutoTokenizer
 AutoTokenizer.from_pretrained('Qwen/Qwen3-1.7B').save_pretrained('$H'); print('tokenizer saved')"
 
-OUT=/home/sya225/opd/bench/sampled
+OUT=/home/USER/opd/bench/sampled
 T=opd17b-step${N}
-cd /home/sya225/opd/LiveCodeBench
+cd /home/USER/opd/LiveCodeBench
 for BENCH in humanevalplus lcb_v6; do
   echo "######## GEN $T / $BENCH $(date -Is) ########"
-  "$E/bin/python" /home/sya225/opd/scripts/gen2.py --model "$H" --bench "$BENCH" \
+  "$E/bin/python" /home/USER/opd/scripts/gen2.py --model "$H" --bench "$BENCH" \
       --out_dir "$OUT" --tag "$T" --max_tokens 6144 \
       --temperature 0.6 --top_p 0.95 --top_k 20 --n 4 --tp 1 --gpu_mem_util 0.85 \
       2>&1 | grep -aE "\[gen\]|rror|Traceback" | tail -6

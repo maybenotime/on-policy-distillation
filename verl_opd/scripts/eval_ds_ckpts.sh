@@ -1,7 +1,7 @@
 #!/bin/bash
 # 19 GPU 3: MathArena-only eval (16k) of the JustRL-distilled R1-Distill-1.5B student at step 200 (last healthy) and
 # step 250 (after the entropy blow-up), plus the untrained base model for reference.
-source /home/sya225/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
+source /home/USER/opd/env.sh none; S=$OPD_HOME/scripts; L=$SCRATCH/logs
 export MAX_TOKENS=16384 CONCURRENCY=100 GPU_UTIL=0.9 MATH_ONLY=1
 CK=$SCRATCH/checkpoints/opd_ds15b_fromJustRL_dapo_16k; BASE=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
 for s in 200 250; do

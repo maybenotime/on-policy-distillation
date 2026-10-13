@@ -1,5 +1,5 @@
 #!/bin/bash
-V=/home/sya225/opd/envs/verl_opd
+V=/home/USER/opd/envs/verl_opd
 P=$("$V/bin/python" -c "import verl,pathlib;print(pathlib.Path(verl.__file__).parent)")
 echo "verl root: $P"
 echo "===== 顶层模块 ====="; ls "$P"

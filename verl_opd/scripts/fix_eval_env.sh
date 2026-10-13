@@ -12,7 +12,7 @@
 # 2) vllm's compile backend shells out to `ninja`; the wheel puts the binary in
 #    the venv's bin/, which is not on PATH unless we export it.
 set -x
-E=/home/sya225/opd/envs/code_eval_env
+E=/home/USER/opd/envs/code_eval_env
 A="$E/lib/python3.12/site-packages/anthropic/__init__.py"
 
 grep -q "HUMAN_PROMPT" "$A" || cat >> "$A" <<'PY'
@@ -27,7 +27,7 @@ ls -l "$E/bin/ninja"
 export PATH="$E/bin:$PATH"
 
 echo "===== re-verify ====="
-PYTHONPATH=/home/sya225/opd/LiveCodeBench "$E/bin/python" -c "
+PYTHONPATH=/home/USER/opd/LiveCodeBench "$E/bin/python" -c "
 import shutil
 from anthropic import HUMAN_PROMPT, AI_PROMPT
 from lcb_runner.runner.scenario_router import build_prompt_benchmark, get_metrics

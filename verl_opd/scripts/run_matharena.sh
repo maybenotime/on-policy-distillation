@@ -10,10 +10,10 @@
 # top_k=20, min_p=0) — deliberately NOT the generation_config.json values
 # (T=0.6/top_p=0.95), which are the thinking-mode recommendation.
 set -x
-E=/home/sya225/opd/envs/code_eval_env      # has vllm 0.27.1
-R=/home/sya225/opd/matharena
-export HF_HOME=/localscratch/sya225/hf_cache
-export HF_DATASETS_CACHE=/localscratch/sya225/hf_cache/datasets
+E=/home/USER/opd/envs/code_eval_env      # has vllm 0.27.1
+R=/home/USER/opd/matharena
+export HF_HOME=/localscratch/USER/hf_cache
+export HF_DATASETS_CACHE=/localscratch/USER/hf_cache/datasets
 export VLLM_API_KEY=dummy
 export PATH="$E/bin:$PATH"
 
@@ -27,7 +27,7 @@ run_model () {   # $1=config name  $2=model path  $3=port  $4=tp
       --model "$path" --served-model-name "$path" \
       --port "$port" --tensor-parallel-size "$tp" --dtype bfloat16 \
       --gpu-memory-utilization 0.90 --max-model-len 40960 --enforce-eager \
-      --api-key dummy > /localscratch/sya225/logs/vllm_${cfg}.log 2>&1 &
+      --api-key dummy > /localscratch/USER/logs/vllm_${cfg}.log 2>&1 &
   local pid=$!
   for i in $(seq 1 90); do
       curl -s -H "Authorization: Bearer dummy" "http://localhost:$port/v1/models" >/dev/null 2>&1 && break
@@ -44,6 +44,6 @@ run_model () {   # $1=config name  $2=model path  $3=port  $4=tp
 run_model qwen3_8b   Qwen/Qwen3-8B    8010 2
 run_model qwen3_4b   Qwen/Qwen3-4B    8011 1
 run_model qwen3_1p7b Qwen/Qwen3-1.7B  8012 1
-run_model opd_4b     /localscratch/sya225/checkpoints/hf_opd30k_step424 8013 1
+run_model opd_4b     /localscratch/USER/checkpoints/hf_opd30k_step424 8013 1
 if [ -n "${OPD17B:-}" ]; then run_model opd_1p7b "$OPD17B" 8014 1; fi
 echo "MATHARENA_ALL_DONE $(date -Is)"

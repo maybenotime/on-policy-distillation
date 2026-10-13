@@ -1,6 +1,6 @@
 """Inspect matharena outputs of a model config: response lengths, repetition, answer presence."""
 import glob, json, sys, os, zstandard as zstd
-R="/home/sya225/opd/matharena/outputs"; cfg=sys.argv[1]
+R="/home/USER/opd/matharena/outputs"; cfg=sys.argv[1]
 files=sorted(glob.glob(f"{R}/aime/aime_2024_I/local/{cfg}/*.json.zst"))[:4]
 for fp in files:
     j=json.loads(zstd.ZstdDecompressor().stream_reader(open(fp,"rb")).read())

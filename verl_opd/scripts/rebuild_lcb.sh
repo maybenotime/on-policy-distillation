@@ -1,8 +1,8 @@
 #!/bin/bash
 export PATH="$HOME/.local/bin:$PATH"
-export HF_HOME=/localscratch/sya225/qwen36_openhands/hf_cache
-cd /localscratch/sya225 || exit 1
-LOG=/localscratch/sya225/lcb_rebuild.log
+export HF_HOME=/localscratch/USER/qwen36_openhands/hf_cache
+cd /localscratch/USER || exit 1
+LOG=/localscratch/USER/lcb_rebuild.log
 echo "=== rebuilding official LiveCodeBench ===" > "$LOG"
 rm -rf LiveCodeBench
 git clone -q --depth 1 https://github.com/LiveCodeBench/LiveCodeBench.git >> "$LOG" 2>&1

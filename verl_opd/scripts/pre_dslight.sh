@@ -1,10 +1,10 @@
 #!/bin/bash
 # 19 GPU 0: offline pre-probe of qihoo360/Light-R1-7B-DS as teacher for R1-Distill-1.5B on the existing 1000 DAPO rollouts.
 # Waits for the model download and for GPU 0 (Qwen3-8B DeepMath shard 0) to free up.
-set -u; source /home/sya225/opd/scripts/topk_common.sh
+set -u; source /home/USER/opd/scripts/topk_common.sh
 S=$OPD_HOME/scripts; G=0; RT=ds15b-dapo; TEACHER=qihoo360/Light-R1-7B-DS
-until grep -q DL_DONE /home/sya225/slurm/dl_light.out 2>/dev/null; do sleep 60; done
-until grep -q GEN_END /home/sya225/slurm/dm_Q3_8B_0.out 2>/dev/null; do sleep 120; done
+until grep -q DL_DONE /home/USER/slurm/dl_light.out 2>/dev/null; do sleep 60; done
+until grep -q GEN_END /home/USER/slurm/dm_Q3_8B_0.out 2>/dev/null; do sleep 120; done
 sleep 30; echo "PRE_LIGHT_START $(date -Is)"
 dump $G $RT $TEACHER preds_TLight7B
 met preds_TJustRL_student preds_TLight7B "pre ds1.5B vs Light-R1-7B-DS"

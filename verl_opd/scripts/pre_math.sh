@@ -2,9 +2,9 @@
 # job 264439 GPU 2 (shared with the running teacher vLLM, ~50 GB free): pre-OPD metrics on math prompts.
 # 1) base-1.7B rollouts on ot3_math30k (via post_topk.sh, util 0.3) + student/teacher top-k for Math-1200,
 # 2) top-k for the other teachers, 3) full-vocab entropy (rho / ForkOverlap / dH) for student + teachers.
-set -u; source /home/sya225/opd/scripts/topk_common.sh
+set -u; source /home/USER/opd/scripts/topk_common.sh
 S=$OPD_HOME/scripts; G=2; RT=Qwen3-1.7B-math
-ROLL_DATA=/home/sya225/opd/verl_data/ot3_math30k/train.parquet bash $S/post_topk.sh $RT Qwen/Qwen3-1.7B Keven16/Qwen3-4B-Non-Thinking-RL-Math-Step1200 $G premath_TK4Bmath1200 0.3
+ROLL_DATA=/home/USER/opd/verl_data/ot3_math30k/train.parquet bash $S/post_topk.sh $RT Qwen/Qwen3-1.7B Keven16/Qwen3-4B-Non-Thinking-RL-Math-Step1200 $G premath_TK4Bmath1200 0.3
 ln -sf $D/premath_TK4Bmath1200_student.npz $D/premath_student.npz
 dump $G $RT Qwen/Qwen3-4B                                     premath_T4B
 dump $G $RT Keven16/Qwen3-4B-Non-Thinking-RL-Code-Step1200    premath_TK4Bcode1200
