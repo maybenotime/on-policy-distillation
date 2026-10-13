@@ -1,0 +1,22 @@
+136a137,152
+>     # --- k1_probe plugin: k1 loss + probes from the teacher top-K (see trainer/distillation/k1_probe.py) ---
+>     if distillation_config.distillation_loss.loss_mode in ("k1_probe", "rk_topk_probe", "k3_probe"):
+>         from verl.trainer.distillation.fsdp.k1_probe import compute_k1_probe_topk
+> 
+>         outputs = compute_k1_probe_topk(
+>             student_logits=student_logits,
+>             teacher_topk_log_probs=data["teacher_logprobs"],
+>             teacher_topk_ids=data["teacher_ids"],
+>             config=distillation_config,
+>             data_format=data_format,
+>             data=data,
+>         )
+>         for k, v in outputs.items():
+>             assert v.shape == student_logits.shape[:2], f"{k}: {v.shape} vs {student_logits.shape[:2]}"
+>         return outputs
+> 
+405a422,425
+> 
+> 
+> # registers loss_mode 'k1_probe' (local plugin)
+> from verl.trainer.distillation import k1_probe as _k1_probe  # noqa: E402,F401

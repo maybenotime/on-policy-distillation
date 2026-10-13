@@ -1,0 +1,26 @@
+499a500,502
+>     # local patch (k1_probe): keep the sampled token's exact log-prob as an extra column in top-k mode
+>     keep_sampled = int(os.getenv("VERL_TEACHER_KEEP_SAMPLED", "0") == "1" and (num_prompt_logprobs or 0) > 0)
+>     actual_ids = list(output.prompt_token_ids)
+501c504
+<     for logprobs_dict in output.prompt_logprobs[1:]:
+---
+>     for pos, logprobs_dict in enumerate(output.prompt_logprobs[1:], start=1):
+508,509c511,512
+<             prompt_ids = [None] * num_prompt_logprobs
+<             prompt_logprobs = [None] * num_prompt_logprobs
+---
+>             prompt_ids = [None] * (num_prompt_logprobs + keep_sampled)
+>             prompt_logprobs = [None] * (num_prompt_logprobs + keep_sampled)
+518a522,526
+>             if keep_sampled:
+>                 # extra last column: the actual token of this position and its exact log-prob (always present in the dict)
+>                 actual_id = int(actual_ids[pos])
+>                 prompt_ids[num_prompt_logprobs] = actual_id
+>                 prompt_logprobs[num_prompt_logprobs] = logprobs_dict[actual_id].logprob
+523,524c531,532
+<     prompt_logprobs_ls.append([0.0] * max(num_prompt_logprobs, 1))
+<     prompt_ids_ls.append([0] * max(num_prompt_logprobs, 1))
+---
+>     prompt_logprobs_ls.append([0.0] * (max(num_prompt_logprobs, 1) + keep_sampled))
+>     prompt_ids_ls.append([0] * (max(num_prompt_logprobs, 1) + keep_sampled))
